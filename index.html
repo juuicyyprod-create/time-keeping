@@ -1,0 +1,897 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import { motion } from "framer-motion";
+import {
+  Play,
+  Pause,
+  Square,
+  Pencil,
+  Trash2,
+  Plus,
+  Clock3,
+  CalendarRange,
+  FolderKanban,
+  Download,
+  TimerReset,
+  Search,
+  BarChart3,
+  ListTodo,
+  LayoutDashboard,
+  ChevronRight,
+} from "lucide-react";
+
+const STORAGE_KEY = "juuicyy-project-time-tracker-v2";
+
+function uid() {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+function pad(n) {
+  return String(n).padStart(2, "0");
+}
+
+function formatDuration(ms) {
+  const totalSeconds = Math.floor(ms / 1000);
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
+function formatDurationShort(ms) {
+  const totalMinutes = Math.round(ms / 60000);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h && m) return `${h} h ${m} min`;
+  if (h) return `${h} h`;
+  return `${m} min`;
+}
+
+function dateKey(dateLike) {
+  const d = new Date(dateLike);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function startOfWeek(inputDate = new Date()) {
+  const d = new Date(inputDate);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+function endOfWeek(inputDate = new Date()) {
+  const d = startOfWeek(inputDate);
+  d.setDate(d.getDate() + 6);
+  d.setHours(23, 59, 59, 999);
+  return d;
+}
+
+function weekLabel(inputDate = new Date()) {
+  const s = startOfWeek(inputDate);
+  const e = endOfWeek(inputDate);
+  return `${s.toLocaleDateString()} → ${e.toLocaleDateString()}`;
+}
+
+function overlapDuration(segmentStart, segmentEnd, rangeStart, rangeEnd) {
+  const start = Math.max(segmentStart, rangeStart);
+  const end = Math.min(segmentEnd, rangeEnd);
+  return Math.max(0, end - start);
+}
+
+function downloadJson(filename, data) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function defaultState() {
+  return {
+    projects: [
+      { id: uid(), code: "X1782", name: "Projet exemple", archived: false, createdAt: new Date().toISOString() },
+      { id: uid(), code: "X2041", name: "Autre dossier", archived: false, createdAt: new Date().toISOString() },
+    ],
+    sessions: [],
+    activeSession: null,
+  };
+}
+
+export default function ProjectTimeTrackerApp() {
+  const [state, setState] = useState(defaultState);
+  const [now, setNow] = useState(Date.now());
+  const [query, setQuery] = useState("");
+  const [projectDialogOpen, setProjectDialogOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
+  const [projectForm, setProjectForm] = useState({ code: "", name: "" });
+  const [editingSession, setEditingSession] = useState(null);
+  const [sessionForm, setSessionForm] = useState({ projectId: "", startAt: "", endAt: "", note: "" });
+  const [mobileTab, setMobileTab] = useState("today");
+  const tickRef = useRef(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setState({ ...defaultState(), ...parsed });
+      }
+    } catch (e) {
+      console.error("Erreur lecture localStorage", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      console.error("Erreur sauvegarde localStorage", e);
+    }
+  }, [state]);
+
+  useEffect(() => {
+    tickRef.current = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(tickRef.current);
+  }, []);
+
+  const projects = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = [...state.projects].sort((a, b) => a.code.localeCompare(b.code));
+    if (!q) return list;
+    return list.filter((p) => `${p.code} ${p.name || ""}`.toLowerCase().includes(q));
+  }, [state.projects, query]);
+
+  const activeProject = state.projects.find((p) => p.id === state.activeSession?.projectId) || null;
+
+  const activeElapsed = useMemo(() => {
+    if (!state.activeSession) return 0;
+    return Math.max(0, now - new Date(state.activeSession.startedAt).getTime());
+  }, [state.activeSession, now]);
+
+  const currentWeek = useMemo(() => {
+    const start = startOfWeek(new Date()).getTime();
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(d.getDate() + i);
+      return d;
+    });
+
+    const daily = {};
+    const byProject = {};
+
+    days.forEach((d) => {
+      daily[dateKey(d)] = {};
+    });
+
+    const finishedSessions = [...state.sessions];
+    if (state.activeSession) {
+      finishedSessions.push({
+        id: "live-preview",
+        projectId: state.activeSession.projectId,
+        startAt: state.activeSession.startedAt,
+        endAt: new Date(now).toISOString(),
+        note: state.activeSession.note || "",
+      });
+    }
+
+    finishedSessions.forEach((session) => {
+      const s = new Date(session.startAt).getTime();
+      const e = new Date(session.endAt).getTime();
+      days.forEach((day) => {
+        const dayStart = new Date(day);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(day);
+        dayEnd.setHours(23, 59, 59, 999);
+        const duration = overlapDuration(s, e, dayStart.getTime(), dayEnd.getTime());
+        if (duration > 0) {
+          const dk = dateKey(day);
+          daily[dk][session.projectId] = (daily[dk][session.projectId] || 0) + duration;
+          byProject[session.projectId] = (byProject[session.projectId] || 0) + duration;
+        }
+      });
+    });
+
+    const total = Object.values(byProject).reduce((a, b) => a + b, 0);
+    return { days, daily, byProject, total };
+  }, [state.sessions, state.activeSession, now]);
+
+  const todayKey = dateKey(new Date());
+  const todayEntries = useMemo(() => {
+    return Object.entries(currentWeek.daily[todayKey] || {}).sort((a, b) => b[1] - a[1]);
+  }, [currentWeek, todayKey]);
+
+  const todayTotal = useMemo(() => {
+    return Object.values(currentWeek.daily[todayKey] || {}).reduce((a, b) => a + b, 0);
+  }, [currentWeek, todayKey]);
+
+  const weeklyProjects = useMemo(() => {
+    return Object.entries(currentWeek.byProject).sort((a, b) => b[1] - a[1]);
+  }, [currentWeek]);
+
+  const recentSessions = useMemo(() => {
+    return [...state.sessions]
+      .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime())
+      .slice(0, 30);
+  }, [state.sessions]);
+
+  function openCreateProject() {
+    setEditingProject(null);
+    setProjectForm({ code: "", name: "" });
+    setProjectDialogOpen(true);
+  }
+
+  function openEditProject(project) {
+    setEditingProject(project);
+    setProjectForm({ code: project.code, name: project.name || "" });
+    setProjectDialogOpen(true);
+  }
+
+  function saveProject() {
+    const code = projectForm.code.trim().toUpperCase();
+    const name = projectForm.name.trim();
+    if (!code) return;
+
+    if (editingProject) {
+      setState((prev) => ({
+        ...prev,
+        projects: prev.projects.map((p) => (p.id === editingProject.id ? { ...p, code, name } : p)),
+      }));
+    } else {
+      setState((prev) => ({
+        ...prev,
+        projects: [...prev.projects, { id: uid(), code, name, archived: false, createdAt: new Date().toISOString() }],
+      }));
+    }
+
+    setProjectDialogOpen(false);
+  }
+
+  function deleteProject(projectId) {
+    const linked = state.sessions.some((s) => s.projectId === projectId) || state.activeSession?.projectId === projectId;
+    if (linked) {
+      setState((prev) => ({
+        ...prev,
+        projects: prev.projects.map((p) => (p.id === projectId ? { ...p, archived: true } : p)),
+      }));
+      return;
+    }
+    setState((prev) => ({ ...prev, projects: prev.projects.filter((p) => p.id !== projectId) }));
+  }
+
+  function startTimer(projectId) {
+    const nowIso = new Date().toISOString();
+    setState((prev) => {
+      const updated = { ...prev };
+      if (updated.activeSession) {
+        updated.sessions = [
+          ...updated.sessions,
+          {
+            id: uid(),
+            projectId: updated.activeSession.projectId,
+            startAt: updated.activeSession.startedAt,
+            endAt: nowIso,
+            note: updated.activeSession.note || "",
+          },
+        ];
+      }
+      updated.activeSession = { projectId, startedAt: nowIso, note: "" };
+      return updated;
+    });
+  }
+
+  function pauseTimer() {
+    const nowIso = new Date().toISOString();
+    setState((prev) => {
+      if (!prev.activeSession) return prev;
+      return {
+        ...prev,
+        sessions: [
+          ...prev.sessions,
+          {
+            id: uid(),
+            projectId: prev.activeSession.projectId,
+            startAt: prev.activeSession.startedAt,
+            endAt: nowIso,
+            note: prev.activeSession.note || "",
+          },
+        ],
+        activeSession: null,
+      };
+    });
+  }
+
+  function stopAndResetTimer() {
+    pauseTimer();
+  }
+
+  function openEditSession(session) {
+    setEditingSession(session);
+    setSessionForm({
+      projectId: session.projectId,
+      startAt: toLocalDateTimeValue(session.startAt),
+      endAt: toLocalDateTimeValue(session.endAt),
+      note: session.note || "",
+    });
+  }
+
+  function saveSessionEdit() {
+    if (!editingSession) return;
+    const startAt = new Date(sessionForm.startAt).toISOString();
+    const endAt = new Date(sessionForm.endAt).toISOString();
+    if (new Date(endAt).getTime() <= new Date(startAt).getTime()) return;
+    setState((prev) => ({
+      ...prev,
+      sessions: prev.sessions.map((s) =>
+        s.id === editingSession.id ? { ...s, projectId: sessionForm.projectId, startAt, endAt, note: sessionForm.note } : s
+      ),
+    }));
+    setEditingSession(null);
+  }
+
+  function deleteSession(sessionId) {
+    setState((prev) => ({ ...prev, sessions: prev.sessions.filter((s) => s.id !== sessionId) }));
+  }
+
+  function exportData() {
+    downloadJson("project-time-tracker-export.json", state);
+  }
+
+  function resetAllData() {
+    const ok = window.confirm("Supprimer toutes les données locales ?");
+    if (!ok) return;
+    const fresh = defaultState();
+    setState(fresh);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
+  }
+
+  function quickAdd15(projectId) {
+    const end = new Date();
+    const start = new Date(end.getTime() - 15 * 60 * 1000);
+    setState((prev) => ({
+      ...prev,
+      sessions: [
+        ...prev.sessions,
+        { id: uid(), projectId, startAt: start.toISOString(), endAt: end.toISOString(), note: "Ajout manuel 15 min" },
+      ],
+    }));
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-zinc-100 via-white to-zinc-200 text-zinc-900 dark:from-zinc-950 dark:via-zinc-900 dark:to-black dark:text-zinc-100">
+      <div className="mx-auto max-w-md p-3 pb-28 md:max-w-7xl md:p-6">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-4 md:mb-6">
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Suivi de temps projets</h1>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">Version pensée mobile d'abord, avec vue rapide aujourd'hui + résumé semaine lisible.</p>
+            </div>
+            <div className="hidden gap-2 md:flex md:flex-wrap">
+              <Button variant="outline" className="rounded-2xl" onClick={exportData}><Download className="mr-2 h-4 w-4" />Exporter</Button>
+              <Button variant="outline" className="rounded-2xl" onClick={resetAllData}><TimerReset className="mr-2 h-4 w-4" />Reset</Button>
+              <Button className="rounded-2xl" onClick={openCreateProject}><Plus className="mr-2 h-4 w-4" />Nouveau projet</Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <StatCard title="Actif" value={activeProject ? activeProject.code : "Aucun"} sub={state.activeSession ? "En cours" : "Prêt"} icon={<Clock3 className="h-4 w-4" />} compact />
+            <StatCard title="Chrono" value={formatDuration(activeElapsed)} sub={activeProject?.name || "—"} icon={<Play className="h-4 w-4" />} compact />
+            <StatCard title="Aujourd'hui" value={formatDurationShort(todayTotal)} sub={new Date().toLocaleDateString()} icon={<CalendarRange className="h-4 w-4" />} compact />
+            <StatCard title="Semaine" value={formatDurationShort(currentWeek.total)} sub={weekLabel(new Date())} icon={<FolderKanban className="h-4 w-4" />} compact />
+          </div>
+        </motion.div>
+
+        <div className="hidden gap-4 lg:grid lg:grid-cols-[1fr_1.35fr]">
+          <div className="grid gap-4">
+            <Card className="rounded-3xl border-0 shadow-xl shadow-black/5">
+              <CardHeader>
+                <CardTitle>Contrôle chrono</CardTitle>
+                <CardDescription>Un seul chrono actif à la fois.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-3xl bg-zinc-100 p-4 dark:bg-zinc-800/60">
+                  <div className="mb-2 text-sm text-zinc-500 dark:text-zinc-400">Projet en cours</div>
+                  <div className="text-2xl font-semibold">{activeProject ? activeProject.code : "Aucun projet actif"}</div>
+                  <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{activeProject?.name || "Choisis un projet pour lancer le chrono."}</div>
+                  <div className="mt-4 text-4xl font-bold tabular-nums">{formatDuration(activeElapsed)}</div>
+                </div>
+                <div className="flex gap-2">
+                  <Button className="flex-1 rounded-2xl" variant="secondary" onClick={pauseTimer} disabled={!state.activeSession}><Pause className="mr-2 h-4 w-4" />Pause</Button>
+                  <Button className="flex-1 rounded-2xl" variant="outline" onClick={stopAndResetTimer} disabled={!state.activeSession}><Square className="mr-2 h-4 w-4" />Stop</Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <ProjectsPanel
+              projects={projects}
+              state={state}
+              currentWeek={currentWeek}
+              query={query}
+              setQuery={setQuery}
+              openEditProject={openEditProject}
+              deleteProject={deleteProject}
+              startTimer={startTimer}
+              quickAdd15={quickAdd15}
+            />
+          </div>
+
+          <div>
+            <Tabs defaultValue="weekly" className="w-full">
+              <TabsList className="mb-4 grid w-full grid-cols-3 rounded-2xl">
+                <TabsTrigger value="weekly" className="rounded-2xl">Résumé semaine</TabsTrigger>
+                <TabsTrigger value="sessions" className="rounded-2xl">Sessions</TabsTrigger>
+                <TabsTrigger value="settings" className="rounded-2xl">Données</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="weekly">
+                <WeeklyDesktopSummary currentWeek={currentWeek} state={state} />
+              </TabsContent>
+
+              <TabsContent value="sessions">
+                <SessionsPanel recentSessions={recentSessions} state={state} openEditSession={openEditSession} deleteSession={deleteSession} />
+              </TabsContent>
+
+              <TabsContent value="settings">
+                <SettingsPanel />
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+
+        <div className="lg:hidden">
+          <div className="mb-4 rounded-3xl border bg-white/90 p-2 shadow-lg shadow-black/5 dark:border-zinc-800 dark:bg-zinc-900/85">
+            <div className="grid grid-cols-4 gap-2">
+              <MobileTabButton active={mobileTab === "today"} onClick={() => setMobileTab("today")} icon={<LayoutDashboard className="h-4 w-4" />} label="Aujourd'hui" />
+              <MobileTabButton active={mobileTab === "projects"} onClick={() => setMobileTab("projects")} icon={<FolderKanban className="h-4 w-4" />} label="Projets" />
+              <MobileTabButton active={mobileTab === "week"} onClick={() => setMobileTab("week")} icon={<BarChart3 className="h-4 w-4" />} label="Semaine" />
+              <MobileTabButton active={mobileTab === "sessions"} onClick={() => setMobileTab("sessions")} icon={<ListTodo className="h-4 w-4" />} label="Sessions" />
+            </div>
+          </div>
+
+          {mobileTab === "today" && (
+            <div className="space-y-4">
+              <Card className="rounded-3xl border-0 shadow-xl shadow-black/5">
+                <CardHeader className="pb-3">
+                  <CardTitle>Chrono</CardTitle>
+                  <CardDescription>Vue principale mobile.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="rounded-3xl bg-zinc-900 p-4 text-white dark:bg-zinc-100 dark:text-zinc-900">
+                    <div className="text-xs uppercase tracking-wide opacity-70">Projet en cours</div>
+                    <div className="mt-2 text-2xl font-bold">{activeProject ? activeProject.code : "Aucun projet"}</div>
+                    <div className="mt-1 text-sm opacity-80">{activeProject?.name || "Démarre un projet depuis l'onglet Projets."}</div>
+                    <div className="mt-5 text-5xl font-bold tabular-nums">{formatDuration(activeElapsed)}</div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button className="rounded-2xl" variant="secondary" onClick={pauseTimer} disabled={!state.activeSession}><Pause className="mr-2 h-4 w-4" />Pause</Button>
+                    <Button className="rounded-2xl" variant="outline" onClick={stopAndResetTimer} disabled={!state.activeSession}><Square className="mr-2 h-4 w-4" />Stop</Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-3xl border-0 shadow-xl shadow-black/5">
+                <CardHeader className="pb-3">
+                  <CardTitle>Aujourd'hui</CardTitle>
+                  <CardDescription>Résumé ultra lisible par projet.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {todayEntries.length === 0 && <div className="text-sm text-zinc-500">Aucun temps enregistré aujourd'hui.</div>}
+                  {todayEntries.map(([projectId, duration]) => {
+                    const p = state.projects.find((x) => x.id === projectId);
+                    const percent = todayTotal ? Math.round((duration / todayTotal) * 100) : 0;
+                    return (
+                      <div key={projectId} className="rounded-2xl border bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900/70">
+                        <div className="mb-1 flex items-center justify-between gap-3">
+                          <span className="font-semibold">{p?.code || "Projet supprimé"}</span>
+                          <span className="text-sm text-zinc-500">{formatDurationShort(duration)}</span>
+                        </div>
+                        {p?.name ? <div className="mb-2 text-xs text-zinc-500">{p.name}</div> : null}
+                        <div className="h-2 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+                          <div className="h-full rounded-full bg-zinc-900 dark:bg-zinc-100" style={{ width: `${percent}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+
+              <QuickActionBar exportData={exportData} resetAllData={resetAllData} openCreateProject={openCreateProject} />
+            </div>
+          )}
+
+          {mobileTab === "projects" && (
+            <div className="space-y-4">
+              <ProjectsPanel
+                projects={projects}
+                state={state}
+                currentWeek={currentWeek}
+                query={query}
+                setQuery={setQuery}
+                openEditProject={openEditProject}
+                deleteProject={deleteProject}
+                startTimer={startTimer}
+                quickAdd15={quickAdd15}
+                mobile
+              />
+              <QuickActionBar exportData={exportData} resetAllData={resetAllData} openCreateProject={openCreateProject} />
+            </div>
+          )}
+
+          {mobileTab === "week" && (
+            <div className="space-y-4">
+              <Card className="rounded-3xl border-0 shadow-xl shadow-black/5">
+                <CardHeader className="pb-3">
+                  <CardTitle>Résumé semaine</CardTitle>
+                  <CardDescription>{weekLabel(new Date())}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {currentWeek.days.map((day) => {
+                    const dk = dateKey(day);
+                    const entries = Object.entries(currentWeek.daily[dk] || {}).sort((a, b) => b[1] - a[1]);
+                    const total = entries.reduce((a, [, v]) => a + v, 0);
+                    return (
+                      <details key={dk} className="rounded-2xl border bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900/70">
+                        <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                          <div>
+                            <div className="font-semibold">{day.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short" })}</div>
+                            <div className="text-sm text-zinc-500">{formatDurationShort(total)}</div>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-zinc-400" />
+                        </summary>
+                        <div className="mt-3 space-y-2 border-t pt-3 dark:border-zinc-800">
+                          {entries.length === 0 && <div className="text-sm text-zinc-500">Aucun temps</div>}
+                          {entries.map(([projectId, duration]) => {
+                            const p = state.projects.find((x) => x.id === projectId);
+                            return (
+                              <div key={projectId} className="flex items-center justify-between gap-3 text-sm">
+                                <span className="font-medium">{p?.code || "Projet supprimé"}</span>
+                                <span className="text-zinc-500">{formatDurationShort(duration)}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </details>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-3xl border-0 shadow-xl shadow-black/5">
+                <CardHeader className="pb-3">
+                  <CardTitle>Total par projet</CardTitle>
+                  <CardDescription>{formatDurationShort(currentWeek.total)} au total</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {weeklyProjects.length === 0 && <div className="text-sm text-zinc-500">Aucune donnée cette semaine.</div>}
+                  {weeklyProjects.map(([projectId, duration]) => {
+                    const p = state.projects.find((x) => x.id === projectId);
+                    const percent = currentWeek.total ? Math.round((duration / currentWeek.total) * 100) : 0;
+                    return (
+                      <div key={projectId} className="rounded-2xl border bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900/70">
+                        <div className="mb-1 flex items-center justify-between gap-3 text-sm">
+                          <span className="font-semibold">{p?.code || "Projet supprimé"}</span>
+                          <span>{formatDurationShort(duration)} · {percent}%</span>
+                        </div>
+                        {p?.name ? <div className="mb-2 text-xs text-zinc-500">{p.name}</div> : null}
+                        <div className="h-2 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+                          <div className="h-full rounded-full bg-zinc-900 dark:bg-zinc-100" style={{ width: `${percent}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {mobileTab === "sessions" && (
+            <div className="space-y-4">
+              <SessionsPanel recentSessions={recentSessions} state={state} openEditSession={openEditSession} deleteSession={deleteSession} mobile />
+              <SettingsPanel mobile />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <Dialog open={projectDialogOpen} onOpenChange={setProjectDialogOpen}>
+        <DialogContent className="rounded-3xl max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingProject ? "Modifier le projet" : "Créer un projet"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-2">
+              <Label>Code projet</Label>
+              <Input placeholder="Ex. X1782" value={projectForm.code} onChange={(e) => setProjectForm((p) => ({ ...p, code: e.target.value }))} />
+            </div>
+            <div className="grid gap-2">
+              <Label>Nom</Label>
+              <Input placeholder="Optionnel" value={projectForm.name} onChange={(e) => setProjectForm((p) => ({ ...p, name: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-2xl" onClick={() => setProjectDialogOpen(false)}>Annuler</Button>
+            <Button className="rounded-2xl" onClick={saveProject}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editingSession} onOpenChange={(v) => !v && setEditingSession(null)}>
+        <DialogContent className="rounded-3xl max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifier la session</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-2">
+              <Label>Projet</Label>
+              <Select value={sessionForm.projectId} onValueChange={(value) => setSessionForm((s) => ({ ...s, projectId: value }))}>
+                <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                <SelectContent>
+                  {state.projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.code} {p.name ? `— ${p.name}` : ""}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Début</Label>
+              <Input type="datetime-local" value={sessionForm.startAt} onChange={(e) => setSessionForm((s) => ({ ...s, startAt: e.target.value }))} />
+            </div>
+            <div className="grid gap-2">
+              <Label>Fin</Label>
+              <Input type="datetime-local" value={sessionForm.endAt} onChange={(e) => setSessionForm((s) => ({ ...s, endAt: e.target.value }))} />
+            </div>
+            <div className="grid gap-2">
+              <Label>Note</Label>
+              <Textarea value={sessionForm.note} onChange={(e) => setSessionForm((s) => ({ ...s, note: e.target.value }))} placeholder="Optionnel" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-2xl" onClick={() => setEditingSession(null)}>Annuler</Button>
+            <Button className="rounded-2xl" onClick={saveSessionEdit}>Sauvegarder</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function ProjectsPanel({ projects, state, currentWeek, query, setQuery, openEditProject, deleteProject, startTimer, quickAdd15, mobile = false }) {
+  return (
+    <Card className="rounded-3xl border-0 shadow-xl shadow-black/5">
+      <CardHeader className={mobile ? "pb-3" : undefined}>
+        <CardTitle>Projets</CardTitle>
+        <CardDescription>Liste compacte, pensée pour lancer vite.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="mb-4 flex items-center gap-2 rounded-2xl border bg-white/70 p-2 dark:bg-zinc-900/60">
+          <Search className="ml-1 h-4 w-4 text-zinc-500" />
+          <Input placeholder="Chercher un projet" value={query} onChange={(e) => setQuery(e.target.value)} className="border-0 bg-transparent shadow-none focus-visible:ring-0" />
+        </div>
+        <div className={`space-y-3 ${mobile ? "" : "max-h-[520px] overflow-y-auto pr-1"}`}>
+          {projects.map((project) => {
+            const isActive = state.activeSession?.projectId === project.id;
+            const weeklyTime = currentWeek.byProject[project.id] || 0;
+            return (
+              <div key={project.id} className="rounded-3xl border bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/70">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="text-lg font-semibold">{project.code}</div>
+                      {project.archived && <Badge variant="secondary">Archivé</Badge>}
+                      {isActive && <Badge>Actif</Badge>}
+                    </div>
+                    <div className="truncate text-sm text-zinc-600 dark:text-zinc-400">{project.name || "Sans nom"}</div>
+                    <div className="mt-2 text-xs text-zinc-500">Semaine: {formatDurationShort(weeklyTime)}</div>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button size="icon" variant="ghost" className="rounded-2xl" onClick={() => openEditProject(project)}><Pencil className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" className="rounded-2xl" onClick={() => deleteProject(project.id)}><Trash2 className="h-4 w-4" /></Button>
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <Button className="rounded-2xl" onClick={() => startTimer(project.id)} disabled={project.archived}>
+                    <Play className="mr-2 h-4 w-4" />{isActive ? "Relancer" : "Démarrer"}
+                  </Button>
+                  <Button variant="outline" className="rounded-2xl" onClick={() => quickAdd15(project.id)}>
+                    +15 min
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+          {projects.length === 0 && <div className="text-sm text-zinc-500">Aucun projet trouvé.</div>}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function WeeklyDesktopSummary({ currentWeek, state }) {
+  return (
+    <Card className="rounded-3xl border-0 shadow-xl shadow-black/5">
+      <CardHeader>
+        <CardTitle>Résumé hebdomadaire</CardTitle>
+        <CardDescription>{weekLabel(new Date())}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {currentWeek.days.map((day) => {
+            const dk = dateKey(day);
+            const entries = Object.entries(currentWeek.daily[dk] || {});
+            const total = entries.reduce((a, [, v]) => a + v, 0);
+            return (
+              <div key={dk} className="rounded-3xl border bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900/70">
+                <div className="mb-2 text-sm font-medium">{day.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short" })}</div>
+                <div className="mb-3 text-xl font-bold">{formatDurationShort(total)}</div>
+                <div className="space-y-2">
+                  {entries.length === 0 && <div className="text-sm text-zinc-500">Aucun temps</div>}
+                  {entries.sort((a, b) => b[1] - a[1]).map(([projectId, duration]) => {
+                    const p = state.projects.find((x) => x.id === projectId);
+                    return (
+                      <div key={projectId} className="flex items-center justify-between gap-3 text-sm">
+                        <span className="truncate font-medium">{p?.code || "Projet supprimé"}</span>
+                        <span className="text-zinc-600 dark:text-zinc-300">{formatDurationShort(duration)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <Separator />
+
+        <div className="rounded-3xl border bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900/70">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-lg font-semibold">Total par projet</div>
+              <div className="text-sm text-zinc-500">Vision rapide fin de semaine</div>
+            </div>
+            <Badge variant="secondary">{formatDurationShort(currentWeek.total)} total</Badge>
+          </div>
+
+          <div className="space-y-3">
+            {Object.entries(currentWeek.byProject).sort((a, b) => b[1] - a[1]).map(([projectId, duration]) => {
+              const p = state.projects.find((x) => x.id === projectId);
+              const percent = currentWeek.total ? Math.round((duration / currentWeek.total) * 100) : 0;
+              return (
+                <div key={projectId}>
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span className="font-medium">{p?.code || "Projet supprimé"} {p?.name ? `— ${p.name}` : ""}</span>
+                    <span>{formatDurationShort(duration)} · {percent}%</span>
+                  </div>
+                  <div className="h-3 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+                    <div className="h-full rounded-full bg-zinc-900 transition-all dark:bg-zinc-100" style={{ width: `${percent}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+            {Object.keys(currentWeek.byProject).length === 0 && <div className="text-sm text-zinc-500">Aucune donnée cette semaine.</div>}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SessionsPanel({ recentSessions, state, openEditSession, deleteSession, mobile = false }) {
+  return (
+    <Card className="rounded-3xl border-0 shadow-xl shadow-black/5">
+      <CardHeader className={mobile ? "pb-3" : undefined}>
+        <CardTitle>Sessions récentes</CardTitle>
+        <CardDescription>Édition manuelle complète.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {recentSessions.map((session) => {
+            const p = state.projects.find((x) => x.id === session.projectId);
+            const duration = new Date(session.endAt).getTime() - new Date(session.startAt).getTime();
+            return (
+              <div key={session.id} className="rounded-3xl border bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900/70">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-base font-semibold">{p?.code || "Projet supprimé"}</div>
+                    <div className="text-sm text-zinc-500">{new Date(session.startAt).toLocaleString()} → {new Date(session.endAt).toLocaleString()}</div>
+                    <div className="mt-1 text-sm">{formatDurationShort(duration)}</div>
+                    {session.note ? <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{session.note}</div> : null}
+                  </div>
+                  <div className="flex gap-1">
+                    <Button size="icon" variant="ghost" className="rounded-2xl" onClick={() => openEditSession(session)}><Pencil className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" className="rounded-2xl" onClick={() => deleteSession(session.id)}><Trash2 className="h-4 w-4" /></Button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {recentSessions.length === 0 && <div className="text-sm text-zinc-500">Aucune session enregistrée.</div>}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SettingsPanel({ mobile = false }) {
+  return (
+    <Card className="rounded-3xl border-0 shadow-xl shadow-black/5">
+      <CardHeader className={mobile ? "pb-3" : undefined}>
+        <CardTitle>Données & usage</CardTitle>
+        <CardDescription>Stockage local navigateur.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm text-zinc-600 dark:text-zinc-300">
+        <div className="rounded-3xl border bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900/70">
+          <div className="font-medium text-zinc-900 dark:text-zinc-100">Mobile first</div>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            <li>Vue Aujourd'hui prioritaire.</li>
+            <li>Résumé semaine en accordéons par jour.</li>
+            <li>Liste projets séparée pour lancer vite.</li>
+            <li>Sessions récentes à part pour éviter le scroll infini.</li>
+          </ul>
+        </div>
+        <div className="rounded-3xl border bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900/70">
+          <div className="font-medium text-zinc-900 dark:text-zinc-100">Important</div>
+          <p className="mt-2">Le localStorage reste dans le navigateur actuel. Si tu changes d'appareil ou vides les données du site, les données locales disparaissent sauf export JSON.</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function QuickActionBar({ exportData, resetAllData, openCreateProject }) {
+  return (
+    <Card className="rounded-3xl border-0 shadow-xl shadow-black/5">
+      <CardContent className="grid grid-cols-3 gap-2 p-3">
+        <Button variant="outline" className="rounded-2xl" onClick={exportData}><Download className="mr-2 h-4 w-4" />Export</Button>
+        <Button variant="outline" className="rounded-2xl" onClick={resetAllData}><TimerReset className="mr-2 h-4 w-4" />Reset</Button>
+        <Button className="rounded-2xl" onClick={openCreateProject}><Plus className="mr-2 h-4 w-4" />Projet</Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function MobileTabButton({ active, onClick, icon, label }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-2xl px-2 py-3 text-center text-xs font-medium transition ${active ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "bg-transparent text-zinc-600 dark:text-zinc-300"}`}
+    >
+      <div className="mb-1 flex justify-center">{icon}</div>
+      <div>{label}</div>
+    </button>
+  );
+}
+
+function StatCard({ title, value, sub, icon, compact = false }) {
+  return (
+    <Card className="rounded-3xl border-0 shadow-xl shadow-black/5">
+      <CardContent className={compact ? "flex items-start justify-between p-4" : "flex items-start justify-between p-5"}>
+        <div className="min-w-0 flex-1">
+          <div className="text-xs text-zinc-500 md:text-sm">{title}</div>
+          <div className={`mt-1 font-bold tracking-tight ${compact ? "text-base md:text-2xl" : "text-2xl"}`}>{value}</div>
+          <div className="mt-1 truncate text-[11px] text-zinc-500 md:text-xs">{sub}</div>
+        </div>
+        <div className="ml-2 rounded-2xl bg-zinc-100 p-2.5 dark:bg-zinc-800">{icon}</div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function toLocalDateTimeValue(iso) {
+  const d = new Date(iso);
+  const yyyy = d.getFullYear();
+  const mm = pad(d.getMonth() + 1);
+  const dd = pad(d.getDate());
+  const hh = pad(d.getHours());
+  const min = pad(d.getMinutes());
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+}

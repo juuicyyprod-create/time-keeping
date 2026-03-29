@@ -1,10 +1,4 @@
-from pathlib import Path
-import zipfile
-
-clean_dir = Path("/mnt/data/juuicyy-time-tracker-static-clean")
-clean_dir.mkdir(parents=True, exist_ok=True)
-
-html = r'''<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
@@ -23,6 +17,8 @@ html = r'''<!DOCTYPE html>
       --accent:#7c9cff;
       --accent-2:#a855f7;
       --ok:#22c55e;
+      --warn:#f59e0b;
+      --danger:#ef4444;
       --shadow:0 20px 60px rgba(0,0,0,.35);
       --radius-xl:28px;
       --radius-lg:20px;
@@ -52,7 +48,7 @@ html = r'''<!DOCTYPE html>
     input::placeholder,textarea::placeholder{color:#93a0b7}
     .app-shell{min-height:100vh;padding:18px 14px 28px}
     .app-wrap{max-width:var(--max-width);margin:0 auto}
-    .hero-card,.panel,.stat-card,.subpanel,.project-card,.session-card,.day-accordion,.modal-panel{
+    .hero-card,.panel,.stat-card,.subpanel,.project-card,.session-card,.day-accordion,.modal-panel,.toast{
       backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
     }
     .hero-card{
@@ -63,10 +59,10 @@ html = r'''<!DOCTYPE html>
     .brand{font-size:.95rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#c9d6ff}
     .hero-card h1{margin:8px 0 6px;font-size:clamp(1.8rem,4vw,3rem);line-height:1.05}
     .subtitle{margin:0;color:var(--muted);max-width:60ch}
-    .hero-actions,.action-row,.project-actions,.icon-actions,.panel-title-row,.summary-row,.subpanel-head,.session-card,.project-top{
+    .hero-actions,.action-row,.project-actions,.icon-actions,.panel-title-row,.summary-row,.subpanel-head,.session-card,.project-top,.toolbar-row{
       display:flex;gap:10px
     }
-    .hero-actions,.action-row,.project-actions{flex-wrap:wrap}
+    .hero-actions,.action-row,.project-actions,.toolbar-row{flex-wrap:wrap}
     .desktop-only{display:none}
     .mobile-only-inline{display:inline-flex}
     .btn{
@@ -77,6 +73,7 @@ html = r'''<!DOCTYPE html>
     .btn:hover:not(:disabled){transform:translateY(-1px)}
     .btn-primary{color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-2))}
     .btn-secondary{color:var(--text);background:rgba(255,255,255,.07);border:1px solid var(--line-strong)}
+    .btn-danger{color:#fff;background:linear-gradient(135deg,#dc2626,#ef4444)}
     .file-btn{position:relative;overflow:hidden}
     .file-btn input{position:absolute;inset:0;opacity:0;cursor:pointer}
     .stats-grid{margin-top:14px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -94,7 +91,7 @@ html = r'''<!DOCTYPE html>
     .panel{margin-top:14px;padding:18px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-xl);box-shadow:var(--shadow)}
     .panel-title-row{align-items:center;justify-content:space-between;margin-bottom:16px}
     .panel-title-row h2,.subpanel h3,.modal-head h3,.project-card h3,.session-card h3{margin:0}
-    .panel-title-row p,.settings-text,.summary-meta,.project-name,.project-week,.session-meta,.session-note,.empty.small{margin:4px 0 0;color:var(--muted)}
+    .panel-title-row p,.settings-text,.summary-meta,.project-name,.project-week,.session-meta,.session-note,.empty.small,.helper{margin:4px 0 0;color:var(--muted)}
     .timer-card{padding:18px;border-radius:var(--radius-lg);background:linear-gradient(135deg,rgba(124,156,255,.2),rgba(168,85,247,.18));border:1px solid rgba(255,255,255,.12)}
     .eyebrow{text-transform:uppercase;letter-spacing:.05em;color:#dbe5ff;font-size:.76rem}
     .timer-project{margin-top:8px;font-size:1.8rem;font-weight:800}
@@ -142,6 +139,11 @@ html = r'''<!DOCTYPE html>
     .form-grid label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:6px}
     .modal-actions{margin-top:16px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
     .hidden{display:none !important}
+    .toast-wrap{position:fixed;right:14px;bottom:14px;z-index:80;display:grid;gap:8px}
+    .toast{padding:12px 14px;border-radius:16px;border:1px solid var(--line-strong);background:rgba(17,21,34,.92);box-shadow:var(--shadow);max-width:360px}
+    .toast.success{border-color:rgba(34,197,94,.35)}
+    .toast.warn{border-color:rgba(245,158,11,.35)}
+    .toast.error{border-color:rgba(239,68,68,.35)}
     @media (min-width:760px){
       .app-shell{padding:24px}
       .hero-card{grid-template-columns:1fr auto;align-items:end}
@@ -167,12 +169,12 @@ html = r'''<!DOCTYPE html>
         </div>
 
         <div class="hero-actions desktop-only">
-          <button class="btn btn-secondary" id="exportDesktop">Exporter</button>
+          <button class="btn btn-secondary" id="exportDesktop" type="button">Exporter</button>
           <label class="btn btn-secondary file-btn">Importer
             <input type="file" id="importDesktop" accept="application/json">
           </label>
-          <button class="btn btn-secondary" id="resetDesktop">Reset</button>
-          <button class="btn btn-primary" id="newProjectDesktop">Nouveau projet</button>
+          <button class="btn btn-secondary" id="resetDesktop" type="button">Reset</button>
+          <button class="btn btn-primary" id="newProjectDesktop" type="button">Nouveau projet</button>
         </div>
       </header>
 
@@ -184,10 +186,10 @@ html = r'''<!DOCTYPE html>
       </section>
 
       <nav class="mobile-tabs">
-        <button class="active" data-tab="today">Aujourd’hui</button>
-        <button data-tab="projects">Projets</button>
-        <button data-tab="week">Semaine</button>
-        <button data-tab="sessions">Sessions</button>
+        <button class="active" data-tab="today" type="button">Aujourd’hui</button>
+        <button data-tab="projects" type="button">Projets</button>
+        <button data-tab="week" type="button">Semaine</button>
+        <button data-tab="sessions" type="button">Sessions</button>
       </nav>
 
       <section class="panel tab-panel" id="panel-today">
@@ -206,8 +208,8 @@ html = r'''<!DOCTYPE html>
         </div>
 
         <div class="action-row" style="margin-top:14px">
-          <button class="btn btn-secondary" id="pauseBtn">Pause</button>
-          <button class="btn btn-secondary" id="stopBtn">Stop</button>
+          <button class="btn btn-secondary" id="pauseBtn" type="button">Pause</button>
+          <button class="btn btn-secondary" id="stopBtn" type="button">Stop</button>
         </div>
 
         <div class="stack" style="margin-top:14px">
@@ -227,7 +229,7 @@ html = r'''<!DOCTYPE html>
             <h2>Projets</h2>
             <p>Lance vite un chrono ou ajoute du temps manuel.</p>
           </div>
-          <button class="btn btn-primary mobile-only-inline" id="newProjectMobile">Nouveau</button>
+          <button class="btn btn-primary mobile-only-inline" id="newProjectMobile" type="button">Nouveau</button>
         </div>
 
         <div class="search-box">
@@ -279,11 +281,11 @@ html = r'''<!DOCTYPE html>
           <p class="settings-text">Sauvegarde locale dans le navigateur. Pour changer d’appareil sans perdre tes données, exporte ton JSON puis importe-le sur l’autre appareil.</p>
 
           <div class="hero-actions">
-            <button class="btn btn-secondary" id="exportMobile">Exporter</button>
+            <button class="btn btn-secondary" id="exportMobile" type="button">Exporter</button>
             <label class="btn btn-secondary file-btn">Importer
               <input type="file" id="importMobile" accept="application/json">
             </label>
-            <button class="btn btn-secondary" id="resetMobile">Reset</button>
+            <button class="btn btn-secondary" id="resetMobile" type="button">Reset</button>
           </div>
         </div>
       </section>
@@ -296,7 +298,7 @@ html = r'''<!DOCTYPE html>
     <div class="modal-panel">
       <div class="modal-head">
         <h3 id="projectModalTitle">Créer un projet</h3>
-        <button class="icon-btn" data-close="projectModal" aria-label="Fermer">×</button>
+        <button class="icon-btn" data-close="projectModal" aria-label="Fermer" type="button">×</button>
       </div>
       <div class="form-grid">
         <label>
@@ -309,8 +311,8 @@ html = r'''<!DOCTYPE html>
         </label>
       </div>
       <div class="modal-actions">
-        <button class="btn btn-secondary" data-close="projectModal">Annuler</button>
-        <button class="btn btn-primary" id="saveProjectBtn">Enregistrer</button>
+        <button class="btn btn-secondary" data-close="projectModal" type="button">Annuler</button>
+        <button class="btn btn-primary" id="saveProjectBtn" type="button">Enregistrer</button>
       </div>
     </div>
   </div>
@@ -319,7 +321,7 @@ html = r'''<!DOCTYPE html>
     <div class="modal-panel">
       <div class="modal-head">
         <h3>Modifier la session</h3>
-        <button class="icon-btn" data-close="sessionModal" aria-label="Fermer">×</button>
+        <button class="icon-btn" data-close="sessionModal" aria-label="Fermer" type="button">×</button>
       </div>
       <div class="form-grid">
         <label>
@@ -340,14 +342,43 @@ html = r'''<!DOCTYPE html>
         </label>
       </div>
       <div class="modal-actions">
-        <button class="btn btn-secondary" data-close="sessionModal">Annuler</button>
-        <button class="btn btn-primary" id="saveSessionBtn">Sauvegarder</button>
+        <button class="btn btn-secondary" data-close="sessionModal" type="button">Annuler</button>
+        <button class="btn btn-primary" id="saveSessionBtn" type="button">Sauvegarder</button>
       </div>
     </div>
   </div>
 
+  <div class="modal-backdrop" id="manualModal">
+    <div class="modal-panel">
+      <div class="modal-head">
+        <h3>Ajout manuel</h3>
+        <button class="icon-btn" data-close="manualModal" aria-label="Fermer" type="button">×</button>
+      </div>
+      <div class="form-grid">
+        <label>
+          <span>Projet</span>
+          <div id="manualProjectLabel" class="helper"></div>
+        </label>
+        <label>
+          <span>Minutes</span>
+          <input type="number" id="manualMinutesInput" min="1" step="1" placeholder="Ex. 30">
+        </label>
+        <label>
+          <span>Note</span>
+          <input type="text" id="manualNoteInput" placeholder="Optionnel">
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" data-close="manualModal" type="button">Annuler</button>
+        <button class="btn btn-primary" id="saveManualBtn" type="button">Ajouter</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-wrap" id="toastWrap"></div>
+
   <script>
-    const STORAGE_KEY = "juuicyy-prod-time-tracker-static-v1";
+    const STORAGE_KEY = "juuicyy-prod-time-tracker-static-v2";
 
     function uid() {
       return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -403,6 +434,7 @@ html = r'''<!DOCTYPE html>
 
     function toLocalDateTimeValue(iso) {
       const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return "";
       const yyyy = d.getFullYear();
       const mm = pad(d.getMonth() + 1);
       const dd = pad(d.getDate());
@@ -427,35 +459,110 @@ html = r'''<!DOCTYPE html>
       URL.revokeObjectURL(url);
     }
 
-    function defaultState() {
+    function defaultState(includeSamples = true) {
       return {
-        projects: [
+        projects: includeSamples ? [
           { id: uid(), code: "X1782", name: "Projet exemple", archived: false, createdAt: new Date().toISOString() },
           { id: uid(), code: "X2041", name: "Autre dossier", archived: false, createdAt: new Date().toISOString() },
-        ],
+        ] : [],
         sessions: [],
         activeSession: null
       };
     }
 
+    function sanitizeProject(project) {
+      if (!project || typeof project !== "object") return null;
+      const code = String(project.code || "").trim().toUpperCase();
+      if (!code) return null;
+      return {
+        id: String(project.id || uid()),
+        code,
+        name: String(project.name || "").trim(),
+        archived: !!project.archived,
+        createdAt: typeof project.createdAt === "string" ? project.createdAt : new Date().toISOString()
+      };
+    }
+
+    function sanitizeSession(session, validProjectIds) {
+      if (!session || typeof session !== "object") return null;
+      const projectId = String(session.projectId || "");
+      const startAt = new Date(session.startAt);
+      const endAt = new Date(session.endAt);
+      if (!validProjectIds.has(projectId)) return null;
+      if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) return null;
+      if (endAt.getTime() <= startAt.getTime()) return null;
+      return {
+        id: String(session.id || uid()),
+        projectId,
+        startAt: startAt.toISOString(),
+        endAt: endAt.toISOString(),
+        note: String(session.note || "").trim()
+      };
+    }
+
+    function sanitizeActiveSession(activeSession, validProjectIds) {
+      if (!activeSession || typeof activeSession !== "object") return null;
+      const projectId = String(activeSession.projectId || "");
+      const startedAt = new Date(activeSession.startedAt);
+      if (!validProjectIds.has(projectId)) return null;
+      if (Number.isNaN(startedAt.getTime())) return null;
+      return {
+        projectId,
+        startedAt: startedAt.toISOString(),
+        note: String(activeSession.note || "").trim()
+      };
+    }
+
+    function normalizeState(rawState) {
+      const seedless = defaultState(false);
+      const source = rawState && typeof rawState === "object" ? rawState : {};
+      const projects = Array.isArray(source.projects) ? source.projects.map(sanitizeProject).filter(Boolean) : [];
+      const uniqueProjects = [];
+      const seenProjectIds = new Set();
+      const seenCodes = new Set();
+
+      for (const project of projects) {
+        if (seenProjectIds.has(project.id)) continue;
+        if (seenCodes.has(project.code)) continue;
+        seenProjectIds.add(project.id);
+        seenCodes.add(project.code);
+        uniqueProjects.push(project);
+      }
+
+      const finalProjects = uniqueProjects.length ? uniqueProjects : defaultState(true).projects;
+      const validProjectIds = new Set(finalProjects.map(p => p.id));
+      const sessions = Array.isArray(source.sessions)
+        ? source.sessions.map(s => sanitizeSession(s, validProjectIds)).filter(Boolean).sort((a,b) => new Date(a.startAt) - new Date(b.startAt))
+        : [];
+      const activeSession = sanitizeActiveSession(source.activeSession, validProjectIds);
+
+      return {
+        ...seedless,
+        projects: finalProjects,
+        sessions,
+        activeSession
+      };
+    }
+
     function safeParseState(raw) {
       try {
-        return { ...defaultState(), ...JSON.parse(raw) };
+        return normalizeState(JSON.parse(raw));
       } catch (e) {
-        return defaultState();
+        return defaultState(true);
       }
     }
 
     const app = {
       state: (() => {
         const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? safeParseState(raw) : defaultState();
+        return raw ? safeParseState(raw) : defaultState(true);
       })(),
       now: Date.now(),
       tab: "today",
       search: "",
       editingProjectId: null,
-      editingSessionId: null
+      editingSessionId: null,
+      manualProjectId: null
     };
 
     const els = {
@@ -480,21 +587,32 @@ html = r'''<!DOCTYPE html>
       weekProjects: document.getElementById("weekProjects"),
       sessionList: document.getElementById("sessionList"),
       projectSearch: document.getElementById("projectSearch"),
-      projectModal: document.getElementById("projectModal"),
       projectModalTitle: document.getElementById("projectModalTitle"),
       projectCodeInput: document.getElementById("projectCodeInput"),
       projectNameInput: document.getElementById("projectNameInput"),
-      sessionModal: document.getElementById("sessionModal"),
       sessionProjectInput: document.getElementById("sessionProjectInput"),
       sessionStartInput: document.getElementById("sessionStartInput"),
       sessionEndInput: document.getElementById("sessionEndInput"),
       sessionNoteInput: document.getElementById("sessionNoteInput"),
+      manualProjectLabel: document.getElementById("manualProjectLabel"),
+      manualMinutesInput: document.getElementById("manualMinutesInput"),
+      manualNoteInput: document.getElementById("manualNoteInput"),
       panels: document.querySelectorAll(".tab-panel"),
       pauseBtn: document.getElementById("pauseBtn"),
       stopBtn: document.getElementById("stopBtn"),
       saveProjectBtn: document.getElementById("saveProjectBtn"),
       saveSessionBtn: document.getElementById("saveSessionBtn"),
+      saveManualBtn: document.getElementById("saveManualBtn"),
+      toastWrap: document.getElementById("toastWrap")
     };
+
+    function showToast(message, kind = "success") {
+      const toast = document.createElement("div");
+      toast.className = `toast ${kind}`;
+      toast.textContent = message;
+      els.toastWrap.appendChild(toast);
+      setTimeout(() => toast.remove(), 3200);
+    }
 
     function persist() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(app.state));
@@ -502,6 +620,10 @@ html = r'''<!DOCTYPE html>
 
     function getActiveProject() {
       return app.state.projects.find(p => p.id === app.state.activeSession?.projectId) || null;
+    }
+
+    function getProjectById(id) {
+      return app.state.projects.find(p => p.id === id) || null;
     }
 
     function getCurrentWeek() {
@@ -565,6 +687,10 @@ html = r'''<!DOCTYPE html>
         .replaceAll("'", "&#039;");
     }
 
+    function isDesktop() {
+      return window.innerWidth >= 980;
+    }
+
     function render() {
       const activeProject = getActiveProject();
       const activeElapsed = app.state.activeSession ? Math.max(0, app.now - new Date(app.state.activeSession.startedAt).getTime()) : 0;
@@ -596,7 +722,7 @@ html = r'''<!DOCTYPE html>
         els.todayEntries.innerHTML = '<div class="empty">Aucun temps enregistré aujourd’hui.</div>';
       } else {
         els.todayEntries.innerHTML = todayEntries.map(([projectId, duration]) => {
-          const p = app.state.projects.find(x => x.id === projectId);
+          const p = getProjectById(projectId);
           const percent = todayTotal ? Math.round((duration / todayTotal) * 100) : 0;
           return `
             <div class="summary-item">
@@ -631,14 +757,14 @@ html = r'''<!DOCTYPE html>
                   <div class="project-week">Semaine : ${escapeHtml(formatDurationShort(weeklyTime))}</div>
                 </div>
                 <div class="icon-actions">
-                  <button class="icon-btn" data-action="edit-project" data-id="${project.id}" aria-label="Modifier">✎</button>
-                  <button class="icon-btn" data-action="delete-project" data-id="${project.id}" aria-label="Supprimer">🗑</button>
+                  <button class="icon-btn" data-action="edit-project" data-id="${project.id}" aria-label="Modifier" type="button">✎</button>
+                  <button class="icon-btn" data-action="delete-project" data-id="${project.id}" aria-label="Supprimer" type="button">🗑</button>
                 </div>
               </div>
               <div class="project-actions">
-                <button class="btn btn-primary" data-action="start-project" data-id="${project.id}" ${project.archived ? "disabled" : ""}>Démarrer</button>
-                <button class="btn btn-secondary" data-action="quick-15" data-id="${project.id}">+15 min</button>
-                <button class="btn btn-secondary" data-action="quick-custom" data-id="${project.id}">Manuel</button>
+                <button class="btn btn-primary" data-action="start-project" data-id="${project.id}" ${project.archived ? "disabled" : ""} type="button">${isActive ? "Relancer" : "Démarrer"}</button>
+                <button class="btn btn-secondary" data-action="quick-15" data-id="${project.id}" type="button">+15 min</button>
+                <button class="btn btn-secondary" data-action="quick-custom" data-id="${project.id}" type="button">Manuel</button>
               </div>
             </article>
           `;
@@ -664,7 +790,7 @@ html = r'''<!DOCTYPE html>
             </summary>
             <div class="accordion-content">
               ${entries.length === 0 ? '<div class="empty small">Aucun temps</div>' : entries.map(([projectId, duration]) => {
-                const p = app.state.projects.find(x => x.id === projectId);
+                const p = getProjectById(projectId);
                 return `
                   <div class="summary-row soft">
                     <strong>${escapeHtml(p?.code || "Projet supprimé")}</strong>
@@ -681,7 +807,7 @@ html = r'''<!DOCTYPE html>
         els.weekProjects.innerHTML = '<div class="empty">Aucune donnée cette semaine.</div>';
       } else {
         els.weekProjects.innerHTML = weeklyProjects.map(([projectId, duration]) => {
-          const p = app.state.projects.find(x => x.id === projectId);
+          const p = getProjectById(projectId);
           const percent = week.total ? Math.round((duration / week.total) * 100) : 0;
           return `
             <div class="summary-item">
@@ -700,7 +826,7 @@ html = r'''<!DOCTYPE html>
         els.sessionList.innerHTML = '<div class="empty">Aucune session enregistrée.</div>';
       } else {
         els.sessionList.innerHTML = recentSessions.map(session => {
-          const p = app.state.projects.find(x => x.id === session.projectId);
+          const p = getProjectById(session.projectId);
           const duration = new Date(session.endAt).getTime() - new Date(session.startAt).getTime();
           return `
             <article class="session-card">
@@ -711,8 +837,8 @@ html = r'''<!DOCTYPE html>
                 ${session.note ? `<div class="session-note">${escapeHtml(session.note)}</div>` : ""}
               </div>
               <div class="icon-actions">
-                <button class="icon-btn" data-action="edit-session" data-id="${session.id}" aria-label="Modifier">✎</button>
-                <button class="icon-btn" data-action="delete-session" data-id="${session.id}" aria-label="Supprimer">🗑</button>
+                <button class="icon-btn" data-action="edit-session" data-id="${session.id}" aria-label="Modifier" type="button">✎</button>
+                <button class="icon-btn" data-action="delete-session" data-id="${session.id}" aria-label="Supprimer" type="button">🗑</button>
               </div>
             </article>
           `;
@@ -722,21 +848,24 @@ html = r'''<!DOCTYPE html>
       document.querySelectorAll(".mobile-tabs button").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.tab === app.tab);
       });
-      els.panels.forEach(panel => panel.classList.add("hidden"));
-      const currentPanel = document.getElementById(`panel-${app.tab}`);
-      if (currentPanel) currentPanel.classList.remove("hidden");
 
-      if (window.innerWidth >= 980) {
+      els.panels.forEach(panel => panel.classList.add("hidden"));
+      if (isDesktop()) {
         els.panels.forEach(panel => panel.classList.remove("hidden"));
+      } else {
+        const currentPanel = document.getElementById(`panel-${app.tab}`);
+        if (currentPanel) currentPanel.classList.remove("hidden");
       }
     }
 
     function openModal(id) {
-      document.getElementById(id).classList.add("open");
+      const modal = document.getElementById(id);
+      if (modal) modal.classList.add("open");
     }
 
     function closeModal(id) {
-      document.getElementById(id).classList.remove("open");
+      const modal = document.getElementById(id);
+      if (modal) modal.classList.remove("open");
     }
 
     function openProjectModal(project = null) {
@@ -745,17 +874,32 @@ html = r'''<!DOCTYPE html>
       els.projectCodeInput.value = project?.code || "";
       els.projectNameInput.value = project?.name || "";
       openModal("projectModal");
+      els.projectCodeInput.focus();
     }
 
     function saveProject() {
       const code = els.projectCodeInput.value.trim().toUpperCase();
       const name = els.projectNameInput.value.trim();
-      if (!code) return;
+
+      if (!code) {
+        showToast("Le code projet est obligatoire.", "warn");
+        els.projectCodeInput.focus();
+        return;
+      }
+
+      const duplicate = app.state.projects.find(p => p.code === code && p.id !== app.editingProjectId);
+      if (duplicate) {
+        showToast("Ce code projet existe déjà.", "warn");
+        els.projectCodeInput.focus();
+        return;
+      }
 
       if (app.editingProjectId) {
         app.state.projects = app.state.projects.map(p => p.id === app.editingProjectId ? { ...p, code, name } : p);
+        showToast("Projet modifié.");
       } else {
         app.state.projects.push({ id: uid(), code, name, archived: false, createdAt: new Date().toISOString() });
+        showToast("Projet ajouté.");
       }
 
       persist();
@@ -765,60 +909,119 @@ html = r'''<!DOCTYPE html>
 
     function deleteProject(projectId) {
       const linked = app.state.sessions.some(s => s.projectId === projectId) || app.state.activeSession?.projectId === projectId;
+      const project = getProjectById(projectId);
+      if (!project) return;
+
       if (linked) {
         app.state.projects = app.state.projects.map(p => p.id === projectId ? { ...p, archived: true } : p);
+        showToast("Projet archivé car il a déjà des sessions.", "warn");
       } else {
         app.state.projects = app.state.projects.filter(p => p.id !== projectId);
+        showToast("Projet supprimé.");
       }
       persist();
       render();
     }
 
-    function startTimer(projectId) {
-      const nowIso = new Date().toISOString();
-      if (app.state.activeSession) {
-        app.state.sessions.push({
-          id: uid(),
-          projectId: app.state.activeSession.projectId,
-          startAt: app.state.activeSession.startedAt,
-          endAt: nowIso,
-          note: app.state.activeSession.note || ""
-        });
+    function commitActiveSession(endIso, reason = "paused") {
+      if (!app.state.activeSession) return false;
+      const startMs = new Date(app.state.activeSession.startedAt).getTime();
+      const endMs = new Date(endIso).getTime();
+      if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
+        app.state.activeSession = null;
+        return false;
       }
+      app.state.sessions.push({
+        id: uid(),
+        projectId: app.state.activeSession.projectId,
+        startAt: new Date(startMs).toISOString(),
+        endAt: new Date(endMs).toISOString(),
+        note: app.state.activeSession.note || ""
+      });
+      app.state.activeSession = null;
+      return true;
+    }
+
+    function startTimer(projectId) {
+      const project = getProjectById(projectId);
+      if (!project || project.archived) return;
+      const nowIso = new Date().toISOString();
+
+      if (app.state.activeSession?.projectId === projectId) {
+        showToast("Ce projet est déjà actif.", "warn");
+        return;
+      }
+
+      if (app.state.activeSession) {
+        commitActiveSession(nowIso, "switch");
+      }
+
       app.state.activeSession = { projectId, startedAt: nowIso, note: "" };
       persist();
       render();
+      showToast(`Chrono lancé sur ${project.code}.`);
     }
 
     function pauseTimer() {
       if (!app.state.activeSession) return;
-      const nowIso = new Date().toISOString();
-      app.state.sessions.push({
-        id: uid(),
-        projectId: app.state.activeSession.projectId,
-        startAt: app.state.activeSession.startedAt,
-        endAt: nowIso,
-        note: app.state.activeSession.note || ""
-      });
-      app.state.activeSession = null;
+      const project = getActiveProject();
+      const ok = commitActiveSession(new Date().toISOString(), "pause");
       persist();
       render();
+      if (ok && project) showToast(`Chrono mis en pause pour ${project.code}.`);
     }
 
-    function quickAdd(projectId, minutes) {
-      const safeMinutes = Number(minutes);
-      if (!safeMinutes || safeMinutes <= 0) return;
+    function stopTimer() {
+      if (!app.state.activeSession) return;
+      const project = getActiveProject();
+      const ok = commitActiveSession(new Date().toISOString(), "stop");
+      persist();
+      render();
+      if (ok && project) showToast(`Chrono arrêté pour ${project.code}.`);
+    }
+
+    function openManualModal(projectId) {
+      const project = getProjectById(projectId);
+      if (!project) return;
+      app.manualProjectId = projectId;
+      els.manualProjectLabel.textContent = project.name ? `${project.code} — ${project.name}` : project.code;
+      els.manualMinutesInput.value = "";
+      els.manualNoteInput.value = "";
+      openModal("manualModal");
+      els.manualMinutesInput.focus();
+    }
+
+    function saveManualEntry() {
+      const projectId = app.manualProjectId;
+      const project = getProjectById(projectId);
+      if (!project) {
+        showToast("Projet introuvable.", "error");
+        return;
+      }
+
+      const minutes = Number(els.manualMinutesInput.value);
+      if (!Number.isFinite(minutes) || minutes <= 0) {
+        showToast("Entre un nombre de minutes valide.", "warn");
+        els.manualMinutesInput.focus();
+        return;
+      }
+
+      const safeMinutes = Math.round(minutes);
       const end = new Date();
       const start = new Date(end.getTime() - safeMinutes * 60 * 1000);
+
       app.state.sessions.push({
         id: uid(),
         projectId,
         startAt: start.toISOString(),
         endAt: end.toISOString(),
-        note: `Ajout manuel ${safeMinutes} min`
+        note: (els.manualNoteInput.value || "").trim() || `Ajout manuel ${safeMinutes} min`
       });
+
       persist();
+      closeModal("manualModal");
       render();
+      showToast(`${safeMinutes} min ajoutées à ${project.code}.`);
     }
 
     function openSessionModal(session) {
@@ -832,53 +1035,81 @@ html = r'''<!DOCTYPE html>
       els.sessionEndInput.value = toLocalDateTimeValue(session.endAt);
       els.sessionNoteInput.value = session.note || "";
       openModal("sessionModal");
+      els.sessionStartInput.focus();
     }
 
     function saveSession() {
       if (!app.editingSessionId) return;
-      const startAt = new Date(els.sessionStartInput.value).toISOString();
-      const endAt = new Date(els.sessionEndInput.value).toISOString();
-      if (new Date(endAt).getTime() <= new Date(startAt).getTime()) return;
+
+      const startRaw = els.sessionStartInput.value;
+      const endRaw = els.sessionEndInput.value;
+      if (!startRaw || !endRaw) {
+        showToast("Début et fin sont obligatoires.", "warn");
+        return;
+      }
+
+      const startAt = new Date(startRaw);
+      const endAt = new Date(endRaw);
+
+      if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) {
+        showToast("Date invalide.", "warn");
+        return;
+      }
+
+      if (endAt.getTime() <= startAt.getTime()) {
+        showToast("La fin doit être après le début.", "warn");
+        return;
+      }
 
       app.state.sessions = app.state.sessions.map(session => session.id === app.editingSessionId ? {
         ...session,
         projectId: els.sessionProjectInput.value,
-        startAt,
-        endAt,
+        startAt: startAt.toISOString(),
+        endAt: endAt.toISOString(),
         note: els.sessionNoteInput.value.trim()
       } : session);
 
       persist();
       closeModal("sessionModal");
       render();
+      showToast("Session modifiée.");
     }
 
     function deleteSession(sessionId) {
       app.state.sessions = app.state.sessions.filter(s => s.id !== sessionId);
       persist();
       render();
+      showToast("Session supprimée.");
     }
 
     function exportData() {
       downloadJson("juuicyy-prod-time-tracker.json", app.state);
+      showToast("Export terminé.");
     }
 
     function importData(file) {
       if (!file) return;
       const reader = new FileReader();
       reader.onload = () => {
-        app.state = safeParseState(reader.result);
-        persist();
-        render();
+        try {
+          app.state = safeParseState(reader.result);
+          persist();
+          render();
+          showToast("Import réussi.");
+        } catch (e) {
+          showToast("Import impossible.", "error");
+        }
       };
+      reader.onerror = () => showToast("Lecture du fichier impossible.", "error");
       reader.readAsText(file);
     }
 
     function resetAllData() {
       if (!window.confirm("Supprimer toutes les données locales ?")) return;
-      app.state = defaultState();
+      app.state = defaultState(true);
       persist();
       render();
+      showToast("Données réinitialisées.", "warn");
     }
 
     document.querySelectorAll("[data-tab]").forEach(btn => {
@@ -897,6 +1128,7 @@ html = r'''<!DOCTYPE html>
     document.getElementById("newProjectMobile").addEventListener("click", () => openProjectModal());
     els.saveProjectBtn.addEventListener("click", saveProject);
     els.saveSessionBtn.addEventListener("click", saveSession);
+    els.saveManualBtn.addEventListener("click", saveManualEntry);
 
     document.querySelectorAll('[data-close]').forEach(btn => {
       btn.addEventListener("click", () => closeModal(btn.dataset.close));
@@ -908,8 +1140,14 @@ html = r'''<!DOCTYPE html>
       });
     });
 
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        document.querySelectorAll('.modal-backdrop.open').forEach(modal => modal.classList.remove("open"));
+      }
+    });
+
     els.pauseBtn.addEventListener("click", pauseTimer);
-    els.stopBtn.addEventListener("click", pauseTimer);
+    els.stopBtn.addEventListener("click", stopTimer);
 
     document.getElementById("exportDesktop").addEventListener("click", exportData);
     document.getElementById("exportMobile").addEventListener("click", exportData);
@@ -924,16 +1162,19 @@ html = r'''<!DOCTYPE html>
 
       const { action, id } = target.dataset;
       if (action === "edit-project") {
-        const project = app.state.projects.find(p => p.id === id);
+        const project = getProjectById(id);
         if (project) openProjectModal(project);
       }
       if (action === "delete-project") deleteProject(id);
       if (action === "start-project") startTimer(id);
-      if (action === "quick-15") quickAdd(id, 15);
-      if (action === "quick-custom") {
-        const value = window.prompt("Ajouter combien de minutes ?", "30");
-        if (value !== null) quickAdd(id, value);
+      if (action === "quick-15") {
+        app.manualProjectId = id;
+        els.manualProjectLabel.textContent = (getProjectById(id)?.name ? `${getProjectById(id).code} — ${getProjectById(id).name}` : getProjectById(id)?.code) || "";
+        els.manualMinutesInput.value = "15";
+        els.manualNoteInput.value = "Ajout manuel 15 min";
+        saveManualEntry();
       }
+      if (action === "quick-custom") openManualModal(id);
       if (action === "edit-session") {
         const session = app.state.sessions.find(s => s.id === id);
         if (session) openSessionModal(session);
@@ -951,13 +1192,3 @@ html = r'''<!DOCTYPE html>
   </script>
 </body>
 </html>
-'''
-
-(clean_dir / "index.html").write_text(html, encoding="utf-8")
-
-zip_path = Path("/mnt/data/juuicyy-time-tracker-static-clean.zip")
-with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-    zf.write(clean_dir / "index.html", "index.html")
-
-print(f"Created {zip_path}")
-print(f"Created {(clean_dir / 'index.html')}")

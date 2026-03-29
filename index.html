@@ -3,373 +3,684 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Juuicyy Prod — Suivi de temps projets</title>
-  <meta name="description" content="Suivi de temps par projet, sauvegarde locale navigateur, résumé hebdomadaire mobile-first." />
-  <meta name="theme-color" content="#111522" />
+  <title>Juuicyy Prod — Suivi de temps</title>
+  <meta name="description" content="Suivi de temps par projet, sauvegarde locale, résumé hebdomadaire." />
+  <meta name="theme-color" content="#080a0f" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;700;800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root{
-      --bg:#0b0c10;
-      --panel:rgba(20,24,32,.82);
-      --line:rgba(255,255,255,.08);
-      --line-strong:rgba(255,255,255,.16);
-      --text:#f4f7fb;
-      --muted:#aeb8c8;
-      --accent:#7c9cff;
-      --accent-2:#a855f7;
-      --ok:#22c55e;
-      --warn:#f59e0b;
-      --danger:#ef4444;
-      --shadow:0 20px 60px rgba(0,0,0,.35);
-      --radius-xl:28px;
-      --radius-lg:20px;
-      --radius-md:14px;
-      --max-width:1180px;
-      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      color:var(--text);
+    :root {
+      --bg: #080a0f;
+      --panel: rgba(14,17,25,.88);
+      --panel-2: rgba(255,255,255,.04);
+      --line: rgba(255,255,255,.07);
+      --line-strong: rgba(255,255,255,.14);
+      --text: #e8eaf0;
+      --muted: #6b7a8d;
+      --muted-2: #9aa3b2;
+      --accent: #f97316;
+      --accent-dim: rgba(249,115,22,.12);
+      --ok: #10b981;
+      --ok-dim: rgba(16,185,129,.12);
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --shadow: 0 16px 48px rgba(0,0,0,.45);
+      --shadow-xl: 0 32px 80px rgba(0,0,0,.6);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --max-width: 1200px;
+      --font-ui: 'Figtree', system-ui, sans-serif;
+      --font-head: 'Syne', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; }
+    body {
+      font-family: var(--font-ui);
+      font-size: 15px;
+      color: var(--text);
+      background: var(--bg);
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
       background:
-        radial-gradient(circle at top left, rgba(124,156,255,.18), transparent 30%),
-        radial-gradient(circle at top right, rgba(168,85,247,.16), transparent 30%),
-        linear-gradient(180deg,#0b0c10 0%,#111522 100%);
+        radial-gradient(ellipse 70% 45% at 10% 0%, rgba(249,115,22,.09) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 35% at 90% 8%, rgba(251,146,60,.06) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 50% at 50% 100%, rgba(249,115,22,.04) 0%, transparent 50%);
+      pointer-events: none; z-index: 0;
     }
-    *{box-sizing:border-box}
-    html,body{min-height:100%;margin:0}
-    body{color:var(--text)}
-    button,input,select,textarea{font:inherit}
-    button{cursor:pointer}
-    input,select,textarea{
-      width:100%;
-      background:rgba(255,255,255,.06);
-      color:var(--text);
-      border:1px solid var(--line-strong);
-      border-radius:14px;
-      padding:12px 14px;
-      outline:none;
+    .app-shell { position: relative; z-index: 1; min-height: 100vh; padding: 20px 16px 32px; }
+    .app-wrap { max-width: var(--max-width); margin: 0 auto; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    input, select, textarea {
+      width: 100%;
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-md);
+      padding: 11px 14px;
+      outline: none;
+      transition: border-color .15s, background .15s, box-shadow .15s;
     }
-    input::placeholder,textarea::placeholder{color:#93a0b7}
-    .app-shell{min-height:100vh;padding:18px 14px 28px}
-    .app-wrap{max-width:var(--max-width);margin:0 auto}
-    .hero-card,.panel,.stat-card,.subpanel,.project-card,.session-card,.day-accordion,.modal-panel,.toast{
-      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      background: rgba(249,115,22,.04);
+      box-shadow: 0 0 0 3px rgba(249,115,22,.1);
     }
-    .hero-card{
-      display:grid; gap:16px; grid-template-columns:1fr; padding:22px; border-radius:var(--radius-xl);
-      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
-      border:1px solid var(--line); box-shadow:var(--shadow);
+    input::placeholder, textarea::placeholder { color: var(--muted); }
+    select option { background: #1a1d26; }
+    textarea { resize: vertical; }
+
+    /* ── HERO ─────────────────────────────────────────────── */
+    .hero-card {
+      display: grid; gap: 20px; grid-template-columns: 1fr;
+      padding: 24px;
+      border-radius: var(--radius-xl);
+      background: rgba(255,255,255,.035);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
     }
-    .brand{font-size:.95rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#c9d6ff}
-    .hero-card h1{margin:8px 0 6px;font-size:clamp(1.8rem,4vw,3rem);line-height:1.05}
-    .subtitle{margin:0;color:var(--muted);max-width:60ch}
-    .hero-actions,.action-row,.project-actions,.icon-actions,.panel-title-row,.summary-row,.subpanel-head,.session-card,.project-top,.toolbar-row{
-      display:flex;gap:10px
+    .brand {
+      font-family: var(--font-head);
+      font-size: .75rem; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--accent);
+      display: flex; align-items: center; gap: 8px;
     }
-    .hero-actions,.action-row,.project-actions,.toolbar-row{flex-wrap:wrap}
-    .desktop-only{display:none}
-    .mobile-only-inline{display:inline-flex}
-    .btn{
-      border:0;border-radius:16px;padding:12px 16px;font-weight:700;transition:transform .14s ease,opacity .14s ease,background .14s ease;
-      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    .brand-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+      animation: brand-pulse 2.5s ease infinite;
     }
-    .btn:disabled{cursor:not-allowed;opacity:.55}
-    .btn:hover:not(:disabled){transform:translateY(-1px)}
-    .btn-primary{color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-2))}
-    .btn-secondary{color:var(--text);background:rgba(255,255,255,.07);border:1px solid var(--line-strong)}
-    .btn-danger{color:#fff;background:linear-gradient(135deg,#dc2626,#ef4444)}
-    .file-btn{position:relative;overflow:hidden}
-    .file-btn input{position:absolute;inset:0;opacity:0;cursor:pointer}
-    .stats-grid{margin-top:14px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-    .stat-card{padding:16px;background:var(--panel);border-radius:var(--radius-lg);border:1px solid var(--line)}
-    .stat-label{color:var(--muted);font-size:.78rem;margin-bottom:8px}
-    .stat-value{font-size:1.1rem;font-weight:800;line-height:1.15;word-break:break-word}
-    .stat-meta{margin-top:6px;color:var(--muted);font-size:.75rem}
-    .mobile-tabs{
-      position:sticky;top:10px;z-index:30;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;
-      margin:16px 0;padding:8px;background:rgba(12,14,20,.82);border:1px solid var(--line);
-      border-radius:22px;box-shadow:var(--shadow)
+    @keyframes brand-pulse {
+      0%,100% { opacity: 1; } 50% { opacity: .4; }
     }
-    .mobile-tabs button{border:0;background:transparent;color:var(--muted);border-radius:16px;padding:12px 8px;font-weight:700}
-    .mobile-tabs button.active{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff}
-    .panel{margin-top:14px;padding:18px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-xl);box-shadow:var(--shadow)}
-    .panel-title-row{align-items:center;justify-content:space-between;margin-bottom:16px}
-    .panel-title-row h2,.subpanel h3,.modal-head h3,.project-card h3,.session-card h3{margin:0}
-    .panel-title-row p,.settings-text,.summary-meta,.project-name,.project-week,.session-meta,.session-note,.empty.small,.helper{margin:4px 0 0;color:var(--muted)}
-    .timer-card{padding:18px;border-radius:var(--radius-lg);background:linear-gradient(135deg,rgba(124,156,255,.2),rgba(168,85,247,.18));border:1px solid rgba(255,255,255,.12)}
-    .eyebrow{text-transform:uppercase;letter-spacing:.05em;color:#dbe5ff;font-size:.76rem}
-    .timer-project{margin-top:8px;font-size:1.8rem;font-weight:800}
-    .timer-subtitle{margin-top:4px;color:#d7def2}
-    .timer-value{margin-top:18px;font-size:clamp(2.1rem,7vw,4.6rem);font-weight:900;line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
-    .stack{display:grid;gap:14px}
-    .subpanel{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:var(--radius-lg);padding:16px}
-    .subpanel.compact{margin-top:16px}
-    .subpanel-head{align-items:center;justify-content:space-between;margin-bottom:14px}
-    .summary-item{padding:12px 0;border-top:1px solid var(--line)}
-    .summary-item:first-of-type{border-top:0;padding-top:0}
-    .summary-row{align-items:center;justify-content:space-between}
-    .summary-row.soft{padding:8px 0}
-    .progress{margin-top:10px;height:8px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.08)}
-    .progress span{display:block;height:100%;border-radius:inherit;background:linear-gradient(135deg,var(--accent),var(--accent-2))}
-    .search-box{margin-bottom:14px}
-    .project-list,.session-list,.accordion-list{display:grid;gap:12px}
-    .project-card,.session-card{padding:16px;border-radius:var(--radius-lg);background:rgba(255,255,255,.04);border:1px solid var(--line)}
-    .project-top,.session-card{align-items:flex-start;justify-content:space-between}
-    .project-code-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-    .pill{font-size:.72rem;padding:5px 8px;border-radius:999px;font-weight:700;background:rgba(255,255,255,.08);border:1px solid var(--line)}
-    .pill.active{background:rgba(34,197,94,.14);color:#8ef0b1;border-color:rgba(34,197,94,.4)}
-    .pill.muted{color:#d1d7e4}
-    .project-actions{margin-top:14px}
-    .project-actions .btn{flex:1 1 120px}
-    .icon-btn{
-      display:inline-flex;align-items:center;justify-content:center;min-width:40px;min-height:40px;
-      background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--line);border-radius:12px
+    .hero-card h1 {
+      font-family: var(--font-head);
+      font-size: clamp(1.7rem, 4vw, 2.7rem);
+      font-weight: 800; line-height: 1.05;
+      letter-spacing: -.025em;
+      margin-top: 10px;
     }
-    .day-accordion{border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.03);overflow:hidden}
-    .day-accordion summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;cursor:pointer}
-    .day-accordion summary::-webkit-details-marker{display:none}
-    .day-accordion[open] .chevron{transform:rotate(90deg)}
-    .chevron{color:var(--muted);transition:transform .18s ease}
-    .accordion-content{padding:0 16px 14px;border-top:1px solid var(--line)}
-    .session-main{min-width:0}
-    .session-duration{margin-top:8px;font-weight:800}
-    .empty{padding:14px;border-radius:14px;text-align:center;color:var(--muted);background:rgba(255,255,255,.03);border:1px dashed var(--line)}
-    .app-footer{margin-top:20px;text-align:center;color:var(--muted);font-size:.85rem;padding-bottom:8px}
-    .modal-backdrop{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.58);display:none;place-items:center;padding:14px}
-    .modal-backdrop.open{display:grid}
-    .modal-panel{width:min(100%,560px);background:rgba(18,22,30,.96);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);padding:18px}
-    .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-    .form-grid{display:grid;gap:12px}
-    .form-grid label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:6px}
-    .modal-actions{margin-top:16px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
-    .hidden{display:none !important}
-    .toast-wrap{position:fixed;right:14px;bottom:14px;z-index:80;display:grid;gap:8px}
-    .toast{padding:12px 14px;border-radius:16px;border:1px solid var(--line-strong);background:rgba(17,21,34,.92);box-shadow:var(--shadow);max-width:360px}
-    .toast.success{border-color:rgba(34,197,94,.35)}
-    .toast.warn{border-color:rgba(245,158,11,.35)}
-    .toast.error{border-color:rgba(239,68,68,.35)}
-    @media (min-width:760px){
-      .app-shell{padding:24px}
-      .hero-card{grid-template-columns:1fr auto;align-items:end}
-      .desktop-only{display:flex}
-      .mobile-only-inline{display:none}
-      .stats-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
-      .stack{grid-template-columns:1.1fr 1fr}
+    .subtitle { margin-top: 6px; color: var(--muted-2); font-size: .9rem; max-width: 55ch; }
+    .hero-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .desktop-only { display: none; }
+    .mobile-only-inline { display: inline-flex; }
+
+    /* ── BUTTONS ─────────────────────────────────────────── */
+    .btn {
+      border: 0; border-radius: var(--radius-md);
+      padding: 10px 16px; font-weight: 600; font-size: .875rem;
+      transition: transform .12s ease, opacity .12s ease, box-shadow .15s ease;
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 7px; white-space: nowrap; cursor: pointer;
     }
-    @media (min-width:980px){
-      .mobile-tabs{display:none}
-      .panel{margin-top:18px}
+    .btn:disabled { cursor: not-allowed; opacity: .4; }
+    .btn:not(:disabled):hover { transform: translateY(-1px); }
+    .btn:not(:disabled):active { transform: translateY(0); }
+    .btn-primary {
+      color: #fff; background: var(--accent);
+      box-shadow: 0 4px 16px rgba(249,115,22,.28);
+    }
+    .btn-primary:not(:disabled):hover { box-shadow: 0 6px 22px rgba(249,115,22,.45); }
+    .btn-secondary {
+      color: var(--text); background: rgba(255,255,255,.07);
+      border: 1px solid var(--line-strong);
+    }
+    .btn-secondary:not(:disabled):hover { background: rgba(255,255,255,.11); }
+    .btn-ghost {
+      color: var(--muted-2); background: transparent;
+      border: 1px solid var(--line); padding: 9px 14px; font-size: .82rem;
+    }
+    .btn-ghost:not(:disabled):hover { color: var(--text); border-color: var(--line-strong); background: rgba(255,255,255,.04); }
+    .file-btn { position: relative; overflow: hidden; }
+    .file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+    /* ── STATS ───────────────────────────────────────────── */
+    .stats-grid {
+      margin-top: 14px;
+      display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px;
+    }
+    .stat-card {
+      padding: 16px;
+      background: var(--panel-2);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line);
+      position: relative; overflow: hidden;
+      transition: border-color .3s;
+    }
+    .stat-card::after {
+      content: ''; position: absolute;
+      top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+      transform: scaleX(0); transform-origin: left;
+      transition: transform .4s ease;
+    }
+    .stat-card.lit::after { transform: scaleX(1); }
+    .stat-card.lit { border-color: rgba(249,115,22,.2); }
+    .stat-label {
+      font-size: .7rem; font-weight: 700;
+      letter-spacing: .07em; text-transform: uppercase;
+      color: var(--muted);
+    }
+    .stat-value {
+      font-family: var(--font-mono);
+      font-size: 1.05rem; font-weight: 700;
+      margin-top: 8px; word-break: break-word;
+    }
+    .stat-meta { margin-top: 4px; color: var(--muted); font-size: .74rem; }
+
+    /* ── TABS ────────────────────────────────────────────── */
+    .mobile-tabs {
+      position: sticky; top: 10px; z-index: 30;
+      display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px;
+      margin: 14px 0; padding: 6px;
+      background: rgba(8,10,15,.92); border: 1px solid var(--line);
+      border-radius: 20px; box-shadow: var(--shadow);
+      backdrop-filter: blur(24px);
+    }
+    .mobile-tabs button {
+      border: 0; background: transparent;
+      color: var(--muted-2); border-radius: 14px;
+      padding: 10px 6px; font-weight: 600; font-size: .8rem;
+      transition: color .15s, background .15s, box-shadow .15s;
+    }
+    .mobile-tabs button.active {
+      background: var(--accent); color: #fff;
+      box-shadow: 0 2px 14px rgba(249,115,22,.35);
+    }
+
+    /* ── PANEL ───────────────────────────────────────────── */
+    .panel {
+      margin-top: 14px; padding: 20px;
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: var(--radius-xl); box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
+    }
+    .panel-title-row {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 12px; margin-bottom: 18px;
+    }
+    .panel-title-row h2 {
+      font-family: var(--font-head);
+      font-size: 1.15rem; font-weight: 700; letter-spacing: -.01em;
+    }
+    .panel-title-row p { margin-top: 3px; color: var(--muted); font-size: .84rem; }
+    .panel-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+    /* ── TIMER ───────────────────────────────────────────── */
+    .timer-card {
+      padding: 24px; border-radius: var(--radius-lg);
+      background: rgba(255,255,255,.035); border: 1px solid var(--line);
+      position: relative; overflow: hidden;
+      transition: border-color .4s, box-shadow .4s;
+    }
+    .timer-card.running {
+      border-color: rgba(249,115,22,.35);
+      box-shadow: 0 0 48px rgba(249,115,22,.08), inset 0 0 32px rgba(249,115,22,.03);
+    }
+    .timer-card-glow {
+      position: absolute; top: -60px; right: -60px;
+      width: 200px; height: 200px; border-radius: 50%;
+      pointer-events: none; opacity: 0;
+      transition: opacity .5s;
+    }
+    .timer-card.running .timer-card-glow { opacity: 1; }
+    .timer-top { display: flex; align-items: center; gap: 10px; }
+    .timer-dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--muted); flex-shrink: 0;
+      transition: background .3s, box-shadow .3s;
+    }
+    .timer-card.running .timer-dot {
+      background: var(--ok);
+      box-shadow: 0 0 0 0 rgba(16,185,129,.6);
+      animation: live-pulse 1.6s ease infinite;
+    }
+    @keyframes live-pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(16,185,129,.7); }
+      70%  { box-shadow: 0 0 0 7px rgba(16,185,129,0); }
+      100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+    }
+    .timer-eyebrow {
+      font-size: .7rem; font-weight: 700;
+      letter-spacing: .09em; text-transform: uppercase; color: var(--muted);
+    }
+    .timer-project {
+      margin-top: 14px;
+      font-family: var(--font-head);
+      font-size: 1.6rem; font-weight: 800; letter-spacing: -.03em;
+    }
+    .timer-subtitle { margin-top: 4px; color: var(--muted-2); font-size: .88rem; }
+    .timer-value {
+      margin-top: 20px;
+      font-family: var(--font-mono);
+      font-size: clamp(2.5rem, 8vw, 4.8rem);
+      font-weight: 800; line-height: 1;
+      letter-spacing: -.04em; font-variant-numeric: tabular-nums;
+    }
+    .timer-note-row { margin-top: 16px; }
+    .timer-note-row input { font-size: .85rem; padding: 9px 12px; }
+    .action-row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+
+    /* ── SUBPANEL ────────────────────────────────────────── */
+    .stack { display: grid; gap: 14px; }
+    .subpanel {
+      background: rgba(255,255,255,.03); border: 1px solid var(--line);
+      border-radius: var(--radius-lg); padding: 16px;
+    }
+    .subpanel.compact { margin-top: 16px; }
+    .subpanel-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .subpanel-head h3 { font-family: var(--font-head); font-size: .92rem; font-weight: 700; }
+    .subpanel-total { font-family: var(--font-mono); font-size: .82rem; font-weight: 600; color: var(--accent); }
+
+    /* ── SUMMARY ─────────────────────────────────────────── */
+    .summary-item { padding: 12px 0; border-top: 1px solid var(--line); }
+    .summary-item:first-of-type { border-top: 0; padding-top: 0; }
+    .summary-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .summary-name { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: .9rem; }
+    .summary-dur { font-family: var(--font-mono); font-size: .82rem; color: var(--muted-2); white-space: nowrap; }
+    .summary-meta { margin-top: 3px; color: var(--muted); font-size: .76rem; }
+    .progress { margin-top: 8px; height: 4px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,.06); }
+    .progress span { display: block; height: 100%; border-radius: inherit; transition: width .5s ease; }
+    .color-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+
+    /* ── SEARCH ──────────────────────────────────────────── */
+    .search-box { margin-bottom: 14px; }
+
+    /* ── PROJECT CARDS ───────────────────────────────────── */
+    .project-list, .session-list, .accordion-list { display: grid; gap: 10px; }
+    .project-card {
+      padding: 16px; border-radius: var(--radius-lg);
+      background: rgba(255,255,255,.03); border: 1px solid var(--line);
+      transition: border-color .2s, background .2s;
+    }
+    .project-card:hover { border-color: var(--line-strong); background: rgba(255,255,255,.05); }
+    .project-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .project-info h3 {
+      font-family: var(--font-head); font-size: 1.08rem; font-weight: 700;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .project-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .project-name { color: var(--muted-2); font-size: .84rem; margin-top: 3px; }
+    .project-meta { display: flex; gap: 6px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+    .pill {
+      font-size: .69rem; padding: 4px 8px; border-radius: 999px;
+      font-weight: 700; background: rgba(255,255,255,.07);
+      border: 1px solid var(--line); letter-spacing: .02em;
+    }
+    .pill.active { background: var(--ok-dim); color: #6ee7b7; border-color: rgba(16,185,129,.28); }
+    .pill.archived { color: var(--muted); }
+    .pill.week { background: var(--accent-dim); color: #fdba74; border-color: rgba(249,115,22,.25); }
+    .icon-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .icon-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 34px; min-height: 34px;
+      background: rgba(255,255,255,.05); color: var(--muted-2);
+      border: 1px solid var(--line); border-radius: var(--radius-sm); font-size: .9rem;
+      transition: color .15s, background .15s, border-color .15s;
+      cursor: pointer;
+    }
+    .icon-btn:hover { color: var(--text); background: rgba(255,255,255,.1); border-color: var(--line-strong); }
+    .icon-btn.danger:hover { color: var(--danger); border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.07); }
+    .project-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+    .project-actions .btn { flex: 1 1 90px; }
+
+    /* ── SESSIONS ────────────────────────────────────────── */
+    .session-card {
+      padding: 14px 16px; border-radius: var(--radius-lg);
+      background: rgba(255,255,255,.03); border: 1px solid var(--line);
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      transition: border-color .2s;
+    }
+    .session-card:hover { border-color: var(--line-strong); }
+    .session-main { min-width: 0; flex: 1; }
+    .session-card h3 {
+      font-family: var(--font-head); font-size: .92rem; font-weight: 700;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .session-meta { color: var(--muted); font-size: .76rem; margin-top: 4px; }
+    .session-duration { font-family: var(--font-mono); font-weight: 700; color: var(--text); margin-top: 6px; font-size: .88rem; }
+    .session-note { color: var(--muted-2); font-size: .79rem; margin-top: 4px; font-style: italic; }
+    .sessions-footer { display: flex; justify-content: center; padding-top: 12px; }
+
+    /* ── DAY ACCORDION ───────────────────────────────────── */
+    .day-accordion {
+      border: 1px solid var(--line); border-radius: var(--radius-md);
+      background: rgba(255,255,255,.02); overflow: hidden;
+    }
+    .day-accordion summary {
+      list-style: none; display: flex; align-items: center;
+      justify-content: space-between; gap: 12px;
+      padding: 12px 16px; cursor: pointer; user-select: none;
+    }
+    .day-accordion summary::-webkit-details-marker { display: none; }
+    .day-accordion[open] .chevron { transform: rotate(90deg); }
+    .chevron { color: var(--muted); transition: transform .2s ease; font-size: 1.05rem; }
+    .accordion-content { padding: 0 16px 12px; border-top: 1px solid var(--line); }
+    .day-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
+    .day-row:last-child { border-bottom: 0; }
+    .day-name { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: .85rem; }
+    .day-dur { font-family: var(--font-mono); font-size: .8rem; color: var(--muted-2); }
+    .day-total { font-family: var(--font-mono); font-size: .8rem; font-weight: 600; color: var(--accent); }
+
+    /* ── EMPTY STATE ─────────────────────────────────────── */
+    .empty {
+      padding: 28px 16px; border-radius: var(--radius-md); text-align: center;
+      color: var(--muted); background: rgba(255,255,255,.02);
+      border: 1px dashed var(--line); font-size: .87rem;
+    }
+    .empty.sm { padding: 16px; }
+    .empty-icon { display: block; font-size: 1.8rem; margin-bottom: 8px; opacity: .35; }
+
+    /* ── MODALS ──────────────────────────────────────────── */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 60;
+      background: rgba(0,0,0,.65); backdrop-filter: blur(8px);
+      display: none; place-items: center; padding: 16px;
+    }
+    .modal-backdrop.open { display: grid; }
+    .modal-panel {
+      width: min(100%, 520px);
+      background: rgba(11,14,21,.98);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); padding: 22px;
+      animation: modal-in .2s cubic-bezier(.2,.8,.4,1);
+    }
+    @keyframes modal-in {
+      from { opacity: 0; transform: scale(.95) translateY(10px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .modal-head h3 { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid label span {
+      display: block; font-size: .75rem; font-weight: 700;
+      color: var(--muted-2); margin-bottom: 7px;
+      letter-spacing: .06em; text-transform: uppercase;
+    }
+    .archive-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+    .archive-row input[type=checkbox] { width: auto; padding: 0; border: none; background: none; box-shadow: none; accent-color: var(--accent); width: 16px; height: 16px; }
+    .archive-row span { color: var(--muted-2); font-size: .9rem; }
+    .modal-actions { margin-top: 20px; display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+    /* ── SETTINGS TEXT ───────────────────────────────────── */
+    .settings-text { color: var(--muted-2); font-size: .84rem; margin: 6px 0 14px; line-height: 1.6; }
+
+    /* ── FOOTER ──────────────────────────────────────────── */
+    .app-footer { margin-top: 22px; text-align: center; color: var(--muted); font-size: .78rem; padding-bottom: 10px; }
+    .shortcuts-row { margin-top: 5px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .kbd {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,.07); border: 1px solid var(--line-strong);
+      border-radius: 5px; padding: 1px 6px;
+      font-family: var(--font-mono); font-size: .68rem; color: var(--muted-2);
+    }
+    .shortcut-hint { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: .72rem; }
+
+    /* ── TOASTS ──────────────────────────────────────────── */
+    .toast-wrap { position: fixed; right: 16px; bottom: 16px; z-index: 80; display: grid; gap: 8px; pointer-events: none; min-width: 240px; }
+    .toast {
+      padding: 11px 14px; border-radius: var(--radius-md);
+      border: 1px solid var(--line-strong); background: rgba(12,15,22,.97);
+      box-shadow: var(--shadow); font-size: .86rem;
+      pointer-events: all; display: flex; align-items: center; gap: 10px;
+      animation: toast-in .22s cubic-bezier(.2,.8,.4,1);
+    }
+    @keyframes toast-in { from { opacity:0; transform:translateX(12px); } to { opacity:1; transform:translateX(0); } }
+    .toast-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .toast.success .toast-dot { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+    .toast.warn .toast-dot { background: var(--warn); }
+    .toast.error .toast-dot { background: var(--danger); }
+    .toast-msg { flex: 1; }
+    .toast-undo {
+      margin-left: 4px; background: none; border: 1px solid var(--line-strong);
+      color: var(--accent); border-radius: 6px; padding: 3px 9px;
+      font-size: .76rem; font-weight: 700; cursor: pointer; transition: background .15s;
+    }
+    .toast-undo:hover { background: var(--accent-dim); }
+
+    /* ── UTILS ───────────────────────────────────────────── */
+    .hidden { display: none !important; }
+
+    /* ── RESPONSIVE ──────────────────────────────────────── */
+    @media (min-width: 760px) {
+      .app-shell { padding: 28px 24px; }
+      .hero-card { grid-template-columns: 1fr auto; align-items: end; }
+      .desktop-only { display: flex; }
+      .mobile-only-inline { display: none; }
+      .stats-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
+    }
+    @media (min-width: 980px) {
+      .mobile-tabs { display: none; }
+      .panel { margin-top: 18px; }
+      .stack { grid-template-columns: 1.1fr 1fr; }
     }
   </style>
 </head>
 <body>
   <div class="app-shell">
     <div class="app-wrap">
+
       <header class="hero-card">
         <div>
-          <div class="brand">Juuicyy Prod</div>
-          <h1>Suivi de temps projets</h1>
-          <p class="subtitle">Chronos par numéro d’identification, édition rapide et résumé hebdo propre.</p>
+          <div class="brand"><span class="brand-dot"></span>Juuicyy Prod</div>
+          <h1>Suivi de temps</h1>
+          <p class="subtitle">Chronos par code projet, ajout rapide et résumé hebdo propre.</p>
         </div>
-
         <div class="hero-actions desktop-only">
-          <button class="btn btn-secondary" id="exportDesktop" type="button">Exporter</button>
-          <label class="btn btn-secondary file-btn">Importer
-            <input type="file" id="importDesktop" accept="application/json">
-          </label>
-          <button class="btn btn-secondary" id="resetDesktop" type="button">Reset</button>
-          <button class="btn btn-primary" id="newProjectDesktop" type="button">Nouveau projet</button>
+          <button class="btn btn-ghost" id="exportDesktop" type="button">↑ Exporter</button>
+          <label class="btn btn-ghost file-btn">↓ Importer<input type="file" id="importDesktop" accept="application/json"></label>
+          <button class="btn btn-ghost" id="resetDesktop" type="button">Reset</button>
+          <button class="btn btn-primary" id="newProjectDesktop" type="button">+ Nouveau projet</button>
         </div>
       </header>
 
       <section class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Actif</div><div class="stat-value" id="statActive">Aucun</div><div class="stat-meta" id="statActiveMeta">Prêt</div></div>
-        <div class="stat-card"><div class="stat-label">Chrono</div><div class="stat-value" id="statChrono">00:00:00</div><div class="stat-meta" id="statChronoMeta">—</div></div>
-        <div class="stat-card"><div class="stat-label">Aujourd’hui</div><div class="stat-value" id="statToday">0 min</div><div class="stat-meta" id="statTodayMeta"></div></div>
-        <div class="stat-card"><div class="stat-label">Semaine</div><div class="stat-value" id="statWeek">0 min</div><div class="stat-meta" id="statWeekMeta"></div></div>
+        <div class="stat-card" id="statCardActive">
+          <div class="stat-label">Projet actif</div>
+          <div class="stat-value" id="statActive">Aucun</div>
+          <div class="stat-meta" id="statActiveMeta">Prêt</div>
+        </div>
+        <div class="stat-card" id="statCardChrono">
+          <div class="stat-label">Chrono</div>
+          <div class="stat-value" id="statChrono">00:00:00</div>
+          <div class="stat-meta" id="statChronoMeta">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Aujourd'hui</div>
+          <div class="stat-value" id="statToday">0 min</div>
+          <div class="stat-meta" id="statTodayMeta"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Cette semaine</div>
+          <div class="stat-value" id="statWeek">0 min</div>
+          <div class="stat-meta" id="statWeekMeta"></div>
+        </div>
       </section>
 
       <nav class="mobile-tabs">
-        <button class="active" data-tab="today" type="button">Aujourd’hui</button>
+        <button class="active" data-tab="today" type="button">Aujourd'hui</button>
         <button data-tab="projects" type="button">Projets</button>
         <button data-tab="week" type="button">Semaine</button>
         <button data-tab="sessions" type="button">Sessions</button>
       </nav>
 
+      <!-- TODAY -->
       <section class="panel tab-panel" id="panel-today">
         <div class="panel-title-row">
-          <div>
-            <h2>Chrono</h2>
-            <p>Vue principale rapide pendant la journée.</p>
+          <div><h2>Chrono</h2><p>Vue principale rapide pendant la journée.</p></div>
+        </div>
+
+        <div class="timer-card" id="timerCard">
+          <div class="timer-card-glow" id="timerGlow"></div>
+          <div class="timer-top">
+            <div class="timer-dot" id="timerDot"></div>
+            <div class="timer-eyebrow" id="timerEyebrow">Aucun projet actif</div>
+          </div>
+          <div class="timer-project" id="timerProject">—</div>
+          <div class="timer-subtitle" id="timerSubtitle">Lance un projet depuis l'onglet Projets.</div>
+          <div class="timer-value" id="timerValue">00:00:00</div>
+          <div class="timer-note-row" id="timerNoteRow" style="display:none">
+            <input type="text" id="timerNoteInput" placeholder="Note sur la session en cours…">
           </div>
         </div>
 
-        <div class="timer-card">
-          <div class="eyebrow">Projet en cours</div>
-          <div class="timer-project" id="timerProject">Aucun projet</div>
-          <div class="timer-subtitle" id="timerSubtitle">Démarre un projet depuis l’onglet Projets.</div>
-          <div class="timer-value" id="timerValue">00:00:00</div>
-        </div>
-
-        <div class="action-row" style="margin-top:14px">
-          <button class="btn btn-secondary" id="pauseBtn" type="button">Pause</button>
-          <button class="btn btn-secondary" id="stopBtn" type="button">Stop</button>
+        <div class="action-row">
+          <button class="btn btn-secondary" id="pauseBtn" type="button">⏸ Pause</button>
+          <button class="btn btn-secondary" id="stopBtn" type="button">⏹ Stop</button>
         </div>
 
         <div class="stack" style="margin-top:14px">
           <div class="subpanel">
             <div class="subpanel-head">
-              <h3>Aujourd’hui</h3>
-              <span id="todayTotalLabel">0 min</span>
+              <h3>Aujourd'hui</h3>
+              <span class="subpanel-total" id="todayTotalLabel">0 min</span>
             </div>
             <div id="todayEntries"></div>
           </div>
         </div>
       </section>
 
+      <!-- PROJECTS -->
       <section class="panel tab-panel hidden" id="panel-projects">
         <div class="panel-title-row">
-          <div>
-            <h2>Projets</h2>
-            <p>Lance vite un chrono ou ajoute du temps manuel.</p>
-          </div>
-          <button class="btn btn-primary mobile-only-inline" id="newProjectMobile" type="button">Nouveau</button>
+          <div><h2>Projets</h2><p>Lance ou ajoute du temps rapidement.</p></div>
+          <button class="btn btn-primary mobile-only-inline" id="newProjectMobile" type="button">+ Nouveau</button>
         </div>
-
         <div class="search-box">
-          <input type="text" id="projectSearch" placeholder="Chercher un projet">
+          <input type="text" id="projectSearch" placeholder="🔍  Chercher par code ou nom…">
         </div>
-
         <div class="project-list" id="projectList"></div>
       </section>
 
+      <!-- WEEK -->
       <section class="panel tab-panel hidden" id="panel-week">
         <div class="panel-title-row">
-          <div>
-            <h2>Résumé semaine</h2>
-            <p id="weekLabel"></p>
+          <div><h2>Résumé semaine</h2><p id="weekLabel"></p></div>
+          <div class="panel-actions">
+            <button class="btn btn-ghost" id="copyWeekBtn" type="button">📋 Copier</button>
           </div>
         </div>
-
         <div class="stack">
           <div class="subpanel">
             <div class="subpanel-head">
               <h3>Par jour</h3>
-              <span id="weekTotalLabel">0 min</span>
+              <span class="subpanel-total" id="weekTotalLabel">0 min</span>
             </div>
             <div class="accordion-list" id="weekDays"></div>
           </div>
-
           <div class="subpanel">
             <div class="subpanel-head">
-              <h3>Total par projet</h3>
-              <span id="weekProjectTotalLabel">0 min</span>
+              <h3>Par projet</h3>
+              <span class="subpanel-total" id="weekProjectTotalLabel">0 min</span>
             </div>
             <div id="weekProjects"></div>
           </div>
         </div>
       </section>
 
+      <!-- SESSIONS -->
       <section class="panel tab-panel hidden" id="panel-sessions">
         <div class="panel-title-row">
-          <div>
-            <h2>Sessions</h2>
-            <p>Édition manuelle complète.</p>
-          </div>
+          <div><h2>Sessions</h2><p>Historique complet et édition manuelle.</p></div>
         </div>
-
         <div class="session-list" id="sessionList"></div>
-
+        <div class="sessions-footer" id="sessionsFooter"></div>
         <div class="subpanel compact">
-          <h3>Données</h3>
-          <p class="settings-text">Sauvegarde locale dans le navigateur. Pour changer d’appareil sans perdre tes données, exporte ton JSON puis importe-le sur l’autre appareil.</p>
-
+          <h3 style="font-family:var(--font-head);font-size:.92rem;font-weight:700;">Données</h3>
+          <p class="settings-text">Sauvegarde locale dans le navigateur. Exporte ton JSON pour transférer vers un autre appareil.</p>
           <div class="hero-actions">
-            <button class="btn btn-secondary" id="exportMobile" type="button">Exporter</button>
-            <label class="btn btn-secondary file-btn">Importer
-              <input type="file" id="importMobile" accept="application/json">
-            </label>
-            <button class="btn btn-secondary" id="resetMobile" type="button">Reset</button>
+            <button class="btn btn-ghost" id="exportMobile" type="button">↑ Exporter</button>
+            <label class="btn btn-ghost file-btn">↓ Importer<input type="file" id="importMobile" accept="application/json"></label>
+            <button class="btn btn-ghost" id="resetMobile" type="button">Reset</button>
           </div>
         </div>
       </section>
 
-      <footer class="app-footer">© Juuicyy Prod — Tous droits réservés</footer>
+      <footer class="app-footer">
+        © Juuicyy Prod — Tous droits réservés
+        <div class="shortcuts-row">
+          <span class="shortcut-hint"><span class="kbd">P</span> Pause</span>
+          <span class="shortcut-hint"><span class="kbd">S</span> Stop</span>
+          <span class="shortcut-hint"><span class="kbd">N</span> Nouveau projet</span>
+          <span class="shortcut-hint"><span class="kbd">Esc</span> Fermer</span>
+        </div>
+      </footer>
     </div>
   </div>
 
+  <!-- PROJECT MODAL -->
   <div class="modal-backdrop" id="projectModal">
     <div class="modal-panel">
       <div class="modal-head">
         <h3 id="projectModalTitle">Créer un projet</h3>
-        <button class="icon-btn" data-close="projectModal" aria-label="Fermer" type="button">×</button>
+        <button class="icon-btn" data-close="projectModal" aria-label="Fermer" type="button">✕</button>
       </div>
       <div class="form-grid">
-        <label>
-          <span>Code projet</span>
-          <input type="text" id="projectCodeInput" placeholder="Ex. X1782">
-        </label>
-        <label>
-          <span>Nom</span>
-          <input type="text" id="projectNameInput" placeholder="Optionnel">
-        </label>
+        <label><span>Code projet *</span><input type="text" id="projectCodeInput" placeholder="Ex. X1782"></label>
+        <label><span>Nom</span><input type="text" id="projectNameInput" placeholder="Optionnel"></label>
+        <div id="archiveToggleRow" class="hidden">
+          <span style="display:block;font-size:.75rem;font-weight:700;color:var(--muted-2);margin-bottom:7px;letter-spacing:.06em;text-transform:uppercase;">Statut</span>
+          <div class="archive-row">
+            <input type="checkbox" id="projectArchivedInput">
+            <span>Projet archivé</span>
+          </div>
+        </div>
       </div>
       <div class="modal-actions">
-        <button class="btn btn-secondary" data-close="projectModal" type="button">Annuler</button>
+        <button class="btn btn-ghost" data-close="projectModal" type="button">Annuler</button>
         <button class="btn btn-primary" id="saveProjectBtn" type="button">Enregistrer</button>
       </div>
     </div>
   </div>
 
+  <!-- SESSION MODAL -->
   <div class="modal-backdrop" id="sessionModal">
     <div class="modal-panel">
       <div class="modal-head">
         <h3>Modifier la session</h3>
-        <button class="icon-btn" data-close="sessionModal" aria-label="Fermer" type="button">×</button>
+        <button class="icon-btn" data-close="sessionModal" aria-label="Fermer" type="button">✕</button>
       </div>
       <div class="form-grid">
-        <label>
-          <span>Projet</span>
-          <select id="sessionProjectInput"></select>
-        </label>
-        <label>
-          <span>Début</span>
-          <input type="datetime-local" id="sessionStartInput">
-        </label>
-        <label>
-          <span>Fin</span>
-          <input type="datetime-local" id="sessionEndInput">
-        </label>
-        <label>
-          <span>Note</span>
-          <textarea rows="4" id="sessionNoteInput" placeholder="Optionnel"></textarea>
-        </label>
+        <label><span>Projet</span><select id="sessionProjectInput"></select></label>
+        <label><span>Début</span><input type="datetime-local" id="sessionStartInput"></label>
+        <label><span>Fin</span><input type="datetime-local" id="sessionEndInput"></label>
+        <label><span>Note</span><textarea rows="3" id="sessionNoteInput" placeholder="Optionnel"></textarea></label>
       </div>
       <div class="modal-actions">
-        <button class="btn btn-secondary" data-close="sessionModal" type="button">Annuler</button>
+        <button class="btn btn-ghost" data-close="sessionModal" type="button">Annuler</button>
         <button class="btn btn-primary" id="saveSessionBtn" type="button">Sauvegarder</button>
       </div>
     </div>
   </div>
 
+  <!-- MANUAL MODAL -->
   <div class="modal-backdrop" id="manualModal">
     <div class="modal-panel">
       <div class="modal-head">
         <h3>Ajout manuel</h3>
-        <button class="icon-btn" data-close="manualModal" aria-label="Fermer" type="button">×</button>
+        <button class="icon-btn" data-close="manualModal" aria-label="Fermer" type="button">✕</button>
       </div>
       <div class="form-grid">
-        <label>
-          <span>Projet</span>
-          <div id="manualProjectLabel" class="helper"></div>
-        </label>
-        <label>
-          <span>Minutes</span>
-          <input type="number" id="manualMinutesInput" min="1" step="1" placeholder="Ex. 30">
-        </label>
-        <label>
-          <span>Note</span>
-          <input type="text" id="manualNoteInput" placeholder="Optionnel">
-        </label>
+        <div>
+          <span style="display:block;font-size:.75rem;font-weight:700;color:var(--muted-2);margin-bottom:7px;letter-spacing:.06em;text-transform:uppercase;">Projet</span>
+          <div id="manualProjectLabel" style="font-weight:700;font-size:.95rem;padding:4px 0;"></div>
+        </div>
+        <label><span>Durée (minutes)</span><input type="number" id="manualMinutesInput" min="1" step="1" placeholder="Ex. 30"></label>
+        <label><span>Note</span><input type="text" id="manualNoteInput" placeholder="Optionnel"></label>
       </div>
       <div class="modal-actions">
-        <button class="btn btn-secondary" data-close="manualModal" type="button">Annuler</button>
+        <button class="btn btn-ghost" data-close="manualModal" type="button">Annuler</button>
         <button class="btn btn-primary" id="saveManualBtn" type="button">Ajouter</button>
       </div>
     </div>
@@ -379,294 +690,237 @@
 
   <script>
     const STORAGE_KEY = "juuicyy-prod-time-tracker-static-v2";
+    const SESSIONS_PER_PAGE = 30;
 
-    function uid() {
-      return Math.random().toString(36).slice(2) + Date.now().toString(36);
+    // ── UTILS ──────────────────────────────────────────────
+    function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+    function pad(n) { return String(n).padStart(2, "0"); }
+
+    function dateKey(d) {
+      const dt = new Date(d);
+      return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
     }
 
-    function pad(n) {
-      return String(n).padStart(2, "0");
+    function startOfWeek(d = new Date()) {
+      const dt = new Date(d);
+      const day = dt.getDay();
+      dt.setHours(0,0,0,0);
+      dt.setDate(dt.getDate() + (day === 0 ? -6 : 1 - day));
+      return dt;
     }
 
-    function dateKey(dateLike) {
-      const d = new Date(dateLike);
-      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    function endOfWeek(d = new Date()) {
+      const dt = startOfWeek(d);
+      dt.setDate(dt.getDate() + 6);
+      dt.setHours(23,59,59,999);
+      return dt;
     }
 
-    function startOfWeek(inputDate = new Date()) {
-      const d = new Date(inputDate);
-      const day = d.getDay();
-      const diff = day === 0 ? -6 : 1 - day;
-      d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() + diff);
-      return d;
-    }
-
-    function endOfWeek(inputDate = new Date()) {
-      const d = startOfWeek(inputDate);
-      d.setDate(d.getDate() + 6);
-      d.setHours(23, 59, 59, 999);
-      return d;
-    }
-
-    function weekLabel(inputDate = new Date()) {
-      const s = startOfWeek(inputDate);
-      const e = endOfWeek(inputDate);
-      return `${s.toLocaleDateString("fr-CA")} → ${e.toLocaleDateString("fr-CA")}`;
+    function weekLabel(d = new Date()) {
+      return `${startOfWeek(d).toLocaleDateString("fr-CA")} → ${endOfWeek(d).toLocaleDateString("fr-CA")}`;
     }
 
     function formatDuration(ms) {
-      const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-      const h = Math.floor(totalSeconds / 3600);
-      const m = Math.floor((totalSeconds % 3600) / 60);
-      const s = totalSeconds % 60;
-      return `${pad(h)}:${pad(m)}:${pad(s)}`;
+      const t = Math.max(0, Math.floor(ms / 1000));
+      return `${pad(Math.floor(t/3600))}:${pad(Math.floor((t%3600)/60))}:${pad(t%60)}`;
     }
 
     function formatDurationShort(ms) {
-      const totalMinutes = Math.max(0, Math.round(ms / 60000));
-      const h = Math.floor(totalMinutes / 60);
-      const m = totalMinutes % 60;
-      if (h && m) return `${h} h ${m} min`;
+      const m = Math.max(0, Math.round(ms / 60000));
+      const h = Math.floor(m / 60), rem = m % 60;
+      if (h && rem) return `${h} h ${rem} min`;
       if (h) return `${h} h`;
       return `${m} min`;
     }
 
-    function toLocalDateTimeValue(iso) {
+    function toLocalDT(iso) {
       const d = new Date(iso);
-      if (Number.isNaN(d.getTime())) return "";
-      const yyyy = d.getFullYear();
-      const mm = pad(d.getMonth() + 1);
-      const dd = pad(d.getDate());
-      const hh = pad(d.getHours());
-      const min = pad(d.getMinutes());
-      return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+      if (isNaN(d.getTime())) return "";
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
     }
 
-    function overlapDuration(segmentStart, segmentEnd, rangeStart, rangeEnd) {
-      const start = Math.max(segmentStart, rangeStart);
-      const end = Math.min(segmentEnd, rangeEnd);
-      return Math.max(0, end - start);
+    function overlap(s, e, rs, re) {
+      return Math.max(0, Math.min(e, re) - Math.max(s, rs));
     }
 
     function downloadJson(filename, data) {
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type:"application/json"}));
       const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.click();
+      a.href = url; a.download = filename; a.click();
       URL.revokeObjectURL(url);
     }
 
-    function defaultState(includeSamples = true) {
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replaceAll("&","&amp;").replaceAll("<","&lt;")
+        .replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+    }
+
+    // ── PROJECT COLORS ──────────────────────────────────────
+    function projectHue(code) {
+      let h = 0;
+      for (let i = 0; i < code.length; i++) h = ((h << 5) - h + code.charCodeAt(i)) | 0;
+      return ((h & 0x7FFFFFFF) % 360);
+    }
+    function projectColor(code) { return `hsl(${projectHue(code)}, 72%, 65%)`; }
+    function projectColorDim(code) { return `hsla(${projectHue(code)}, 72%, 50%, 0.18)`; }
+
+    // ── STATE ───────────────────────────────────────────────
+    function defaultState(samples = true) {
       return {
-        projects: includeSamples ? [
+        projects: samples ? [
           { id: uid(), code: "X1782", name: "Projet exemple", archived: false, createdAt: new Date().toISOString() },
-          { id: uid(), code: "X2041", name: "Autre dossier", archived: false, createdAt: new Date().toISOString() },
+          { id: uid(), code: "X2041", name: "Autre dossier",  archived: false, createdAt: new Date().toISOString() },
         ] : [],
         sessions: [],
         activeSession: null
       };
     }
 
-    function sanitizeProject(project) {
-      if (!project || typeof project !== "object") return null;
-      const code = String(project.code || "").trim().toUpperCase();
+    function sanitizeProject(p) {
+      if (!p || typeof p !== "object") return null;
+      const code = String(p.code || "").trim().toUpperCase();
       if (!code) return null;
       return {
-        id: String(project.id || uid()),
-        code,
-        name: String(project.name || "").trim(),
-        archived: !!project.archived,
-        createdAt: typeof project.createdAt === "string" ? project.createdAt : new Date().toISOString()
+        id: String(p.id || uid()), code,
+        name: String(p.name || "").trim(),
+        archived: !!p.archived,
+        createdAt: typeof p.createdAt === "string" ? p.createdAt : new Date().toISOString()
       };
     }
 
-    function sanitizeSession(session, validProjectIds) {
-      if (!session || typeof session !== "object") return null;
-      const projectId = String(session.projectId || "");
-      const startAt = new Date(session.startAt);
-      const endAt = new Date(session.endAt);
-      if (!validProjectIds.has(projectId)) return null;
-      if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) return null;
-      if (endAt.getTime() <= startAt.getTime()) return null;
+    function sanitizeSession(s, validIds) {
+      if (!s || typeof s !== "object") return null;
+      const projectId = String(s.projectId || "");
+      const startAt = new Date(s.startAt), endAt = new Date(s.endAt);
+      if (!validIds.has(projectId)) return null;
+      if (isNaN(startAt) || isNaN(endAt) || endAt <= startAt) return null;
       return {
-        id: String(session.id || uid()),
-        projectId,
-        startAt: startAt.toISOString(),
-        endAt: endAt.toISOString(),
-        note: String(session.note || "").trim()
+        id: String(s.id || uid()), projectId,
+        startAt: startAt.toISOString(), endAt: endAt.toISOString(),
+        note: String(s.note || "").trim()
       };
     }
 
-    function sanitizeActiveSession(activeSession, validProjectIds) {
-      if (!activeSession || typeof activeSession !== "object") return null;
-      const projectId = String(activeSession.projectId || "");
-      const startedAt = new Date(activeSession.startedAt);
-      if (!validProjectIds.has(projectId)) return null;
-      if (Number.isNaN(startedAt.getTime())) return null;
-      return {
-        projectId,
-        startedAt: startedAt.toISOString(),
-        note: String(activeSession.note || "").trim()
-      };
+    function sanitizeActiveSession(as, validIds) {
+      if (!as || typeof as !== "object") return null;
+      const projectId = String(as.projectId || "");
+      const startedAt = new Date(as.startedAt);
+      if (!validIds.has(projectId) || isNaN(startedAt)) return null;
+      return { projectId, startedAt: startedAt.toISOString(), note: String(as.note || "").trim() };
     }
 
-    function normalizeState(rawState) {
-      const seedless = defaultState(false);
-      const source = rawState && typeof rawState === "object" ? rawState : {};
-      const projects = Array.isArray(source.projects) ? source.projects.map(sanitizeProject).filter(Boolean) : [];
-      const uniqueProjects = [];
-      const seenProjectIds = new Set();
-      const seenCodes = new Set();
-
-      for (const project of projects) {
-        if (seenProjectIds.has(project.id)) continue;
-        if (seenCodes.has(project.code)) continue;
-        seenProjectIds.add(project.id);
-        seenCodes.add(project.code);
-        uniqueProjects.push(project);
+    function normalizeState(raw) {
+      const src = raw && typeof raw === "object" ? raw : {};
+      const projects = [];
+      const seenIds = new Set(), seenCodes = new Set();
+      for (const p of (Array.isArray(src.projects) ? src.projects.map(sanitizeProject).filter(Boolean) : [])) {
+        if (!seenIds.has(p.id) && !seenCodes.has(p.code)) {
+          seenIds.add(p.id); seenCodes.add(p.code); projects.push(p);
+        }
       }
-
-      const finalProjects = uniqueProjects.length ? uniqueProjects : defaultState(true).projects;
-      const validProjectIds = new Set(finalProjects.map(p => p.id));
-      const sessions = Array.isArray(source.sessions)
-        ? source.sessions.map(s => sanitizeSession(s, validProjectIds)).filter(Boolean).sort((a,b) => new Date(a.startAt) - new Date(b.startAt))
-        : [];
-      const activeSession = sanitizeActiveSession(source.activeSession, validProjectIds);
-
-      return {
-        ...seedless,
-        projects: finalProjects,
-        sessions,
-        activeSession
-      };
+      const finalProjects = projects.length ? projects : defaultState(true).projects;
+      const validIds = new Set(finalProjects.map(p => p.id));
+      const sessions = (Array.isArray(src.sessions)
+        ? src.sessions.map(s => sanitizeSession(s, validIds)).filter(Boolean)
+        : []).sort((a,b) => new Date(a.startAt) - new Date(b.startAt));
+      return { projects: finalProjects, sessions, activeSession: sanitizeActiveSession(src.activeSession, validIds) };
     }
 
     function safeParseState(raw) {
-      try {
-        return normalizeState(JSON.parse(raw));
-      } catch (e) {
-        return defaultState(true);
-      }
+      try { return normalizeState(JSON.parse(raw)); }
+      catch { return defaultState(true); }
     }
 
+    // ── APP ─────────────────────────────────────────────────
     const app = {
-      state: (() => {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? safeParseState(raw) : defaultState(true);
-      })(),
+      state: (() => { const r = localStorage.getItem(STORAGE_KEY); return r ? safeParseState(r) : defaultState(true); })(),
       now: Date.now(),
       tab: "today",
       search: "",
       editingProjectId: null,
       editingSessionId: null,
-      manualProjectId: null
+      manualProjectId: null,
+      sessionsPage: 1,
+      _noteTimer: null
     };
 
+    // ── ELEMENTS ────────────────────────────────────────────
+    const $ = id => document.getElementById(id);
     const els = {
-      statActive: document.getElementById("statActive"),
-      statActiveMeta: document.getElementById("statActiveMeta"),
-      statChrono: document.getElementById("statChrono"),
-      statChronoMeta: document.getElementById("statChronoMeta"),
-      statToday: document.getElementById("statToday"),
-      statTodayMeta: document.getElementById("statTodayMeta"),
-      statWeek: document.getElementById("statWeek"),
-      statWeekMeta: document.getElementById("statWeekMeta"),
-      timerProject: document.getElementById("timerProject"),
-      timerSubtitle: document.getElementById("timerSubtitle"),
-      timerValue: document.getElementById("timerValue"),
-      todayTotalLabel: document.getElementById("todayTotalLabel"),
-      todayEntries: document.getElementById("todayEntries"),
-      projectList: document.getElementById("projectList"),
-      weekLabel: document.getElementById("weekLabel"),
-      weekTotalLabel: document.getElementById("weekTotalLabel"),
-      weekProjectTotalLabel: document.getElementById("weekProjectTotalLabel"),
-      weekDays: document.getElementById("weekDays"),
-      weekProjects: document.getElementById("weekProjects"),
-      sessionList: document.getElementById("sessionList"),
-      projectSearch: document.getElementById("projectSearch"),
-      projectModalTitle: document.getElementById("projectModalTitle"),
-      projectCodeInput: document.getElementById("projectCodeInput"),
-      projectNameInput: document.getElementById("projectNameInput"),
-      sessionProjectInput: document.getElementById("sessionProjectInput"),
-      sessionStartInput: document.getElementById("sessionStartInput"),
-      sessionEndInput: document.getElementById("sessionEndInput"),
-      sessionNoteInput: document.getElementById("sessionNoteInput"),
-      manualProjectLabel: document.getElementById("manualProjectLabel"),
-      manualMinutesInput: document.getElementById("manualMinutesInput"),
-      manualNoteInput: document.getElementById("manualNoteInput"),
+      statActive:    $("statActive"),    statActiveMeta: $("statActiveMeta"),
+      statChrono:    $("statChrono"),    statChronoMeta: $("statChronoMeta"),
+      statCardActive:$("statCardActive"),statCardChrono: $("statCardChrono"),
+      statToday:     $("statToday"),     statTodayMeta:  $("statTodayMeta"),
+      statWeek:      $("statWeek"),      statWeekMeta:   $("statWeekMeta"),
+      timerCard:     $("timerCard"),     timerGlow:      $("timerGlow"),
+      timerEyebrow:  $("timerEyebrow"), timerProject:   $("timerProject"),
+      timerSubtitle: $("timerSubtitle"),timerValue:     $("timerValue"),
+      timerNoteRow:  $("timerNoteRow"), timerNoteInput: $("timerNoteInput"),
+      todayTotalLabel:$("todayTotalLabel"),todayEntries: $("todayEntries"),
+      projectList:   $("projectList"),
+      weekLabel:     $("weekLabel"),
+      weekTotalLabel:$("weekTotalLabel"),weekProjectTotalLabel:$("weekProjectTotalLabel"),
+      weekDays:      $("weekDays"),      weekProjects:   $("weekProjects"),
+      sessionList:   $("sessionList"),   sessionsFooter: $("sessionsFooter"),
+      projectSearch: $("projectSearch"),
+      projectModalTitle:$("projectModalTitle"),
+      projectCodeInput: $("projectCodeInput"), projectNameInput:$("projectNameInput"),
+      projectArchivedInput:$("projectArchivedInput"),archiveToggleRow:$("archiveToggleRow"),
+      sessionProjectInput:$("sessionProjectInput"),
+      sessionStartInput:$("sessionStartInput"),sessionEndInput:$("sessionEndInput"),
+      sessionNoteInput: $("sessionNoteInput"),
+      manualProjectLabel:$("manualProjectLabel"),
+      manualMinutesInput:$("manualMinutesInput"),manualNoteInput:$("manualNoteInput"),
       panels: document.querySelectorAll(".tab-panel"),
-      pauseBtn: document.getElementById("pauseBtn"),
-      stopBtn: document.getElementById("stopBtn"),
-      saveProjectBtn: document.getElementById("saveProjectBtn"),
-      saveSessionBtn: document.getElementById("saveSessionBtn"),
-      saveManualBtn: document.getElementById("saveManualBtn"),
-      toastWrap: document.getElementById("toastWrap")
+      pauseBtn:$("pauseBtn"), stopBtn:$("stopBtn"),
+      saveProjectBtn:$("saveProjectBtn"), saveSessionBtn:$("saveSessionBtn"), saveManualBtn:$("saveManualBtn"),
+      toastWrap:$("toastWrap")
     };
 
-    function showToast(message, kind = "success") {
+    // ── TOAST ───────────────────────────────────────────────
+    function showToast(msg, kind = "success", undoCb = null) {
       const toast = document.createElement("div");
       toast.className = `toast ${kind}`;
-      toast.textContent = message;
+      const dot = document.createElement("span"); dot.className = "toast-dot";
+      const text = document.createElement("span"); text.className = "toast-msg"; text.textContent = msg;
+      toast.appendChild(dot); toast.appendChild(text);
+      if (undoCb) {
+        const btn = document.createElement("button"); btn.className = "toast-undo"; btn.textContent = "Annuler";
+        btn.addEventListener("click", () => { undoCb(); toast.remove(); });
+        toast.appendChild(btn);
+      }
       els.toastWrap.appendChild(toast);
-      setTimeout(() => toast.remove(), 3200);
+      setTimeout(() => toast.remove(), undoCb ? 4200 : 3000);
     }
 
-    function persist() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(app.state));
-    }
-
-    function getActiveProject() {
-      return app.state.projects.find(p => p.id === app.state.activeSession?.projectId) || null;
-    }
-
-    function getProjectById(id) {
-      return app.state.projects.find(p => p.id === id) || null;
-    }
+    function persist() { localStorage.setItem(STORAGE_KEY, JSON.stringify(app.state)); }
+    function getActiveProject() { return app.state.projects.find(p => p.id === app.state.activeSession?.projectId) || null; }
+    function getProjectById(id) { return app.state.projects.find(p => p.id === id) || null; }
 
     function getCurrentWeek() {
       const start = startOfWeek(new Date()).getTime();
-      const days = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(start);
-        d.setDate(d.getDate() + i);
-        return d;
-      });
-
-      const daily = {};
-      const byProject = {};
+      const days = Array.from({length:7}, (_,i) => { const d = new Date(start); d.setDate(d.getDate()+i); return d; });
+      const daily = {}, byProject = {};
       days.forEach(d => { daily[dateKey(d)] = {}; });
-
       const sessions = [...app.state.sessions];
       if (app.state.activeSession) {
-        sessions.push({
-          id: "live-preview",
-          projectId: app.state.activeSession.projectId,
-          startAt: app.state.activeSession.startedAt,
-          endAt: new Date(app.now).toISOString(),
-          note: app.state.activeSession.note || ""
-        });
+        sessions.push({ id:"live", projectId:app.state.activeSession.projectId,
+          startAt:app.state.activeSession.startedAt, endAt: new Date(app.now).toISOString() });
       }
-
-      sessions.forEach(session => {
-        const s = new Date(session.startAt).getTime();
-        const e = new Date(session.endAt).getTime();
-
+      sessions.forEach(s => {
+        const ss = new Date(s.startAt).getTime(), se = new Date(s.endAt).getTime();
         days.forEach(day => {
-          const dayStart = new Date(day);
-          dayStart.setHours(0,0,0,0);
-          const dayEnd = new Date(day);
-          dayEnd.setHours(23,59,59,999);
-          const duration = overlapDuration(s, e, dayStart.getTime(), dayEnd.getTime());
-          if (duration > 0) {
+          const ds = new Date(day); ds.setHours(0,0,0,0);
+          const de = new Date(day); de.setHours(23,59,59,999);
+          const dur = overlap(ss, se, ds.getTime(), de.getTime());
+          if (dur > 0) {
             const dk = dateKey(day);
-            daily[dk][session.projectId] = (daily[dk][session.projectId] || 0) + duration;
-            byProject[session.projectId] = (byProject[session.projectId] || 0) + duration;
+            daily[dk][s.projectId] = (daily[dk][s.projectId] || 0) + dur;
+            byProject[s.projectId] = (byProject[s.projectId] || 0) + dur;
           }
         });
       });
-
       const total = Object.values(byProject).reduce((a,b) => a+b, 0);
       return { days, daily, byProject, total };
     }
@@ -674,205 +928,232 @@
     function filteredProjects() {
       const q = app.search.trim().toLowerCase();
       const list = [...app.state.projects].sort((a,b) => a.code.localeCompare(b.code));
-      if (!q) return list;
-      return list.filter(p => `${p.code} ${p.name || ""}`.toLowerCase().includes(q));
+      return q ? list.filter(p => `${p.code} ${p.name}`.toLowerCase().includes(q)) : list;
     }
 
-    function escapeHtml(str) {
-      return String(str ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+    function isDesktop() { return window.innerWidth >= 980; }
+
+    // ── TICK UPDATE (every second, only timer values) ───────
+    function tickUpdate() {
+      app.now = Date.now();
+      const elapsed = app.state.activeSession
+        ? Math.max(0, app.now - new Date(app.state.activeSession.startedAt).getTime()) : 0;
+      els.statChrono.textContent = formatDuration(elapsed);
+      els.timerValue.textContent = formatDuration(elapsed);
     }
 
-    function isDesktop() {
-      return window.innerWidth >= 980;
-    }
-
+    // ── FULL RENDER ─────────────────────────────────────────
     function render() {
-      const activeProject = getActiveProject();
-      const activeElapsed = app.state.activeSession ? Math.max(0, app.now - new Date(app.state.activeSession.startedAt).getTime()) : 0;
+      app.now = Date.now();
+      const active = getActiveProject();
+      const elapsed = app.state.activeSession
+        ? Math.max(0, app.now - new Date(app.state.activeSession.startedAt).getTime()) : 0;
       const week = getCurrentWeek();
       const todayKey = dateKey(new Date());
-      const todayEntries = Object.entries(week.daily[todayKey] || {}).sort((a,b) => b[1] - a[1]);
-      const todayTotal = todayEntries.reduce((sum, [,v]) => sum + v, 0);
-      const weeklyProjects = Object.entries(week.byProject).sort((a,b) => b[1] - a[1]);
-      const recentSessions = [...app.state.sessions].sort((a,b) => new Date(b.startAt) - new Date(a.startAt)).slice(0, 40);
+      const todayEntries = Object.entries(week.daily[todayKey] || {}).sort((a,b) => b[1]-a[1]);
+      const todayTotal = todayEntries.reduce((s,[,v]) => s+v, 0);
+      const weeklyProjects = Object.entries(week.byProject).sort((a,b) => b[1]-a[1]);
+      const allSessions = [...app.state.sessions].sort((a,b) => new Date(b.startAt) - new Date(a.startAt));
+      const pagedSessions = allSessions.slice(0, app.sessionsPage * SESSIONS_PER_PAGE);
+      const running = !!app.state.activeSession;
 
-      els.statActive.textContent = activeProject ? activeProject.code : "Aucun";
-      els.statActiveMeta.textContent = app.state.activeSession ? "En cours" : "Prêt";
-      els.statChrono.textContent = formatDuration(activeElapsed);
-      els.statChronoMeta.textContent = activeProject?.name || "—";
+      // Stats
+      els.statActive.textContent = active ? active.code : "Aucun";
+      els.statActiveMeta.textContent = running ? "● En cours" : "Prêt";
+      els.statChrono.textContent = formatDuration(elapsed);
+      els.statChronoMeta.textContent = active?.name || "—";
       els.statToday.textContent = formatDurationShort(todayTotal);
       els.statTodayMeta.textContent = new Date().toLocaleDateString("fr-CA");
       els.statWeek.textContent = formatDurationShort(week.total);
-      els.statWeekMeta.textContent = weekLabel(new Date());
+      els.statWeekMeta.textContent = weekLabel();
+      els.statCardActive.classList.toggle("lit", running);
+      els.statCardChrono.classList.toggle("lit", running);
 
-      els.timerProject.textContent = activeProject ? activeProject.code : "Aucun projet";
-      els.timerSubtitle.textContent = activeProject?.name || "Démarre un projet depuis l’onglet Projets.";
-      els.timerValue.textContent = formatDuration(activeElapsed);
+      // Timer card
+      els.timerCard.classList.toggle("running", running);
+      els.timerEyebrow.textContent = running ? "En cours" : "Aucun projet actif";
+      els.timerProject.textContent = active ? active.code : "—";
+      els.timerSubtitle.textContent = active?.name || "Lance un projet depuis l'onglet Projets.";
+      els.timerValue.textContent = formatDuration(elapsed);
+      els.timerNoteRow.style.display = running ? "block" : "none";
+
+      if (active) {
+        const dim = projectColorDim(active.code);
+        els.timerGlow.style.background = `radial-gradient(circle, ${dim} 0%, transparent 70%)`;
+        if (!els.timerNoteInput.dataset.userEditing) {
+          els.timerNoteInput.value = app.state.activeSession?.note || "";
+        }
+      }
+
+      els.pauseBtn.disabled = !running;
+      els.stopBtn.disabled = !running;
+
+      // Today entries
       els.todayTotalLabel.textContent = formatDurationShort(todayTotal);
-
-      els.pauseBtn.disabled = !app.state.activeSession;
-      els.stopBtn.disabled = !app.state.activeSession;
-
       if (todayEntries.length === 0) {
-        els.todayEntries.innerHTML = '<div class="empty">Aucun temps enregistré aujourd’hui.</div>';
+        els.todayEntries.innerHTML = '<div class="empty sm">Aucun temps enregistré aujourd\'hui.</div>';
       } else {
-        els.todayEntries.innerHTML = todayEntries.map(([projectId, duration]) => {
-          const p = getProjectById(projectId);
-          const percent = todayTotal ? Math.round((duration / todayTotal) * 100) : 0;
-          return `
-            <div class="summary-item">
-              <div class="summary-row">
-                <strong>${escapeHtml(p?.code || "Projet supprimé")}</strong>
-                <span>${escapeHtml(formatDurationShort(duration))}</span>
-              </div>
-              ${p?.name ? `<div class="summary-meta">${escapeHtml(p.name)}</div>` : ""}
-              <div class="progress"><span style="width:${percent}%"></span></div>
+        els.todayEntries.innerHTML = todayEntries.map(([pid, dur]) => {
+          const p = getProjectById(pid);
+          const pct = todayTotal ? Math.round(dur/todayTotal*100) : 0;
+          const color = p ? projectColor(p.code) : "#6b7a8d";
+          return `<div class="summary-item">
+            <div class="summary-row">
+              <span class="summary-name"><span class="color-dot" style="background:${color}"></span>${escapeHtml(p?.code||"Supprimé")}</span>
+              <span class="summary-dur">${escapeHtml(formatDurationShort(dur))}</span>
             </div>
-          `;
+            ${p?.name ? `<div class="summary-meta">${escapeHtml(p.name)}</div>` : ""}
+            <div class="progress"><span style="width:${pct}%;background:${color}"></span></div>
+          </div>`;
         }).join("");
       }
 
+      // Projects
       const projects = filteredProjects();
       if (projects.length === 0) {
-        els.projectList.innerHTML = '<div class="empty">Aucun projet trouvé.</div>';
+        els.projectList.innerHTML = '<div class="empty"><span class="empty-icon">📁</span>Aucun projet trouvé.</div>';
       } else {
-        els.projectList.innerHTML = projects.map(project => {
-          const weeklyTime = week.byProject[project.id] || 0;
-          const isActive = app.state.activeSession?.projectId === project.id;
-          return `
-            <article class="project-card">
-              <div class="project-top">
-                <div>
-                  <div class="project-code-row">
-                    <h3>${escapeHtml(project.code)}</h3>
-                    ${isActive ? '<span class="pill active">Actif</span>' : ""}
-                    ${project.archived ? '<span class="pill muted">Archivé</span>' : ""}
-                  </div>
-                  <div class="project-name">${escapeHtml(project.name || "Sans nom")}</div>
-                  <div class="project-week">Semaine : ${escapeHtml(formatDurationShort(weeklyTime))}</div>
-                </div>
-                <div class="icon-actions">
-                  <button class="icon-btn" data-action="edit-project" data-id="${project.id}" aria-label="Modifier" type="button">✎</button>
-                  <button class="icon-btn" data-action="delete-project" data-id="${project.id}" aria-label="Supprimer" type="button">🗑</button>
+        els.projectList.innerHTML = projects.map(p => {
+          const wt = week.byProject[p.id] || 0;
+          const isActive = app.state.activeSession?.projectId === p.id;
+          const color = projectColor(p.code);
+          const cnt = app.state.sessions.filter(s => s.projectId === p.id).length;
+          return `<article class="project-card">
+            <div class="project-top">
+              <div class="project-info">
+                <h3><span class="project-dot" style="background:${color};box-shadow:0 0 7px ${color}60"></span>${escapeHtml(p.code)}</h3>
+                <div class="project-name">${escapeHtml(p.name || "Sans nom")}</div>
+                <div class="project-meta">
+                  ${isActive ? '<span class="pill active">● Actif</span>' : ""}
+                  ${p.archived ? '<span class="pill archived">Archivé</span>' : ""}
+                  ${wt > 0 ? `<span class="pill week">${escapeHtml(formatDurationShort(wt))} cette sem.</span>` : ""}
+                  <span class="pill">${cnt} session${cnt!==1?"s":""}</span>
                 </div>
               </div>
-              <div class="project-actions">
-                <button class="btn btn-primary" data-action="start-project" data-id="${project.id}" ${project.archived ? "disabled" : ""} type="button">${isActive ? "Relancer" : "Démarrer"}</button>
-                <button class="btn btn-secondary" data-action="quick-15" data-id="${project.id}" type="button">+15 min</button>
-                <button class="btn btn-secondary" data-action="quick-custom" data-id="${project.id}" type="button">Manuel</button>
+              <div class="icon-actions">
+                <button class="icon-btn" data-action="edit-project" data-id="${p.id}" aria-label="Modifier" type="button">✎</button>
+                <button class="icon-btn danger" data-action="delete-project" data-id="${p.id}" aria-label="Supprimer" type="button">🗑</button>
               </div>
-            </article>
-          `;
+            </div>
+            <div class="project-actions">
+              <button class="btn btn-primary" data-action="start-project" data-id="${p.id}" ${p.archived?"disabled":""} type="button">${isActive?"⟳ Relancer":"▶ Démarrer"}</button>
+              <button class="btn btn-secondary" data-action="quick-15" data-id="${p.id}" type="button">+15 min</button>
+              <button class="btn btn-secondary" data-action="quick-custom" data-id="${p.id}" type="button">Manuel</button>
+            </div>
+          </article>`;
         }).join("");
       }
 
-      els.weekLabel.textContent = weekLabel(new Date());
+      // Week
+      els.weekLabel.textContent = weekLabel();
       els.weekTotalLabel.textContent = formatDurationShort(week.total);
       els.weekProjectTotalLabel.textContent = formatDurationShort(week.total);
 
       els.weekDays.innerHTML = week.days.map(day => {
         const dk = dateKey(day);
-        const entries = Object.entries(week.daily[dk] || {}).sort((a,b) => b[1] - a[1]);
-        const total = entries.reduce((a, [,v]) => a + v, 0);
-        return `
-          <details class="day-accordion">
-            <summary>
-              <div>
-                <strong>${escapeHtml(day.toLocaleDateString("fr-CA", { weekday: "long", day: "numeric", month: "short" }))}</strong>
-                <div class="summary-meta">${escapeHtml(formatDurationShort(total))}</div>
-              </div>
+        const entries = Object.entries(week.daily[dk] || {}).sort((a,b) => b[1]-a[1]);
+        const total = entries.reduce((a,[,v]) => a+v, 0);
+        const isToday = dk === todayKey;
+        return `<details class="day-accordion" ${isToday?"open":""}>
+          <summary>
+            <strong style="${isToday?"color:var(--accent)":""}">${escapeHtml(day.toLocaleDateString("fr-CA",{weekday:"long",day:"numeric",month:"short"}))}${isToday?" · Aujourd'hui":""}</strong>
+            <div style="display:flex;align-items:center;gap:12px">
+              <span class="day-total">${escapeHtml(formatDurationShort(total))}</span>
               <span class="chevron">›</span>
-            </summary>
-            <div class="accordion-content">
-              ${entries.length === 0 ? '<div class="empty small">Aucun temps</div>' : entries.map(([projectId, duration]) => {
-                const p = getProjectById(projectId);
-                return `
-                  <div class="summary-row soft">
-                    <strong>${escapeHtml(p?.code || "Projet supprimé")}</strong>
-                    <span>${escapeHtml(formatDurationShort(duration))}</span>
-                  </div>
-                `;
-              }).join("")}
             </div>
-          </details>
-        `;
+          </summary>
+          <div class="accordion-content">
+            ${entries.length === 0
+              ? '<div class="empty sm" style="margin-top:8px">Aucun temps</div>'
+              : entries.map(([pid, dur]) => {
+                  const p = getProjectById(pid);
+                  const color = p ? projectColor(p.code) : "#6b7a8d";
+                  return `<div class="day-row">
+                    <span class="day-name"><span class="color-dot" style="background:${color}"></span>${escapeHtml(p?.code||"Supprimé")}</span>
+                    <span class="day-dur">${escapeHtml(formatDurationShort(dur))}</span>
+                  </div>`;
+                }).join("")}
+          </div>
+        </details>`;
       }).join("");
 
       if (weeklyProjects.length === 0) {
-        els.weekProjects.innerHTML = '<div class="empty">Aucune donnée cette semaine.</div>';
+        els.weekProjects.innerHTML = '<div class="empty"><span class="empty-icon">📊</span>Aucune donnée cette semaine.</div>';
       } else {
-        els.weekProjects.innerHTML = weeklyProjects.map(([projectId, duration]) => {
-          const p = getProjectById(projectId);
-          const percent = week.total ? Math.round((duration / week.total) * 100) : 0;
-          return `
-            <div class="summary-item">
-              <div class="summary-row">
-                <strong>${escapeHtml(p?.code || "Projet supprimé")}</strong>
-                <span>${escapeHtml(formatDurationShort(duration))} · ${percent}%</span>
-              </div>
-              ${p?.name ? `<div class="summary-meta">${escapeHtml(p.name)}</div>` : ""}
-              <div class="progress"><span style="width:${percent}%"></span></div>
+        els.weekProjects.innerHTML = weeklyProjects.map(([pid, dur]) => {
+          const p = getProjectById(pid);
+          const pct = week.total ? Math.round(dur/week.total*100) : 0;
+          const color = p ? projectColor(p.code) : "#6b7a8d";
+          return `<div class="summary-item">
+            <div class="summary-row">
+              <span class="summary-name"><span class="color-dot" style="background:${color}"></span>${escapeHtml(p?.code||"Supprimé")}</span>
+              <span class="summary-dur">${escapeHtml(formatDurationShort(dur))} · ${pct}%</span>
             </div>
-          `;
+            ${p?.name ? `<div class="summary-meta">${escapeHtml(p.name)}</div>` : ""}
+            <div class="progress"><span style="width:${pct}%;background:${color}"></span></div>
+          </div>`;
         }).join("");
       }
 
-      if (recentSessions.length === 0) {
-        els.sessionList.innerHTML = '<div class="empty">Aucune session enregistrée.</div>';
+      // Sessions
+      if (allSessions.length === 0) {
+        els.sessionList.innerHTML = '<div class="empty"><span class="empty-icon">🕐</span>Aucune session enregistrée.</div>';
       } else {
-        els.sessionList.innerHTML = recentSessions.map(session => {
-          const p = getProjectById(session.projectId);
-          const duration = new Date(session.endAt).getTime() - new Date(session.startAt).getTime();
-          return `
-            <article class="session-card">
-              <div class="session-main">
-                <h3>${escapeHtml(p?.code || "Projet supprimé")}</h3>
-                <div class="session-meta">${escapeHtml(new Date(session.startAt).toLocaleString("fr-CA"))} → ${escapeHtml(new Date(session.endAt).toLocaleString("fr-CA"))}</div>
-                <div class="session-duration">${escapeHtml(formatDurationShort(duration))}</div>
-                ${session.note ? `<div class="session-note">${escapeHtml(session.note)}</div>` : ""}
-              </div>
-              <div class="icon-actions">
-                <button class="icon-btn" data-action="edit-session" data-id="${session.id}" aria-label="Modifier" type="button">✎</button>
-                <button class="icon-btn" data-action="delete-session" data-id="${session.id}" aria-label="Supprimer" type="button">🗑</button>
-              </div>
-            </article>
-          `;
+        els.sessionList.innerHTML = pagedSessions.map(s => {
+          const p = getProjectById(s.projectId);
+          const dur = new Date(s.endAt) - new Date(s.startAt);
+          const color = p ? projectColor(p.code) : "#6b7a8d";
+          return `<article class="session-card">
+            <div class="session-main">
+              <h3><span class="color-dot" style="background:${color}"></span>${escapeHtml(p?.code||"Supprimé")}</h3>
+              <div class="session-meta">${escapeHtml(new Date(s.startAt).toLocaleString("fr-CA"))} → ${escapeHtml(new Date(s.endAt).toLocaleString("fr-CA"))}</div>
+              <div class="session-duration">${escapeHtml(formatDurationShort(dur))}</div>
+              ${s.note ? `<div class="session-note">${escapeHtml(s.note)}</div>` : ""}
+            </div>
+            <div class="icon-actions">
+              <button class="icon-btn" data-action="edit-session" data-id="${s.id}" aria-label="Modifier" type="button">✎</button>
+              <button class="icon-btn danger" data-action="delete-session" data-id="${s.id}" aria-label="Supprimer" type="button">🗑</button>
+            </div>
+          </article>`;
         }).join("");
       }
 
+      if (allSessions.length > app.sessionsPage * SESSIONS_PER_PAGE) {
+        const rem = allSessions.length - app.sessionsPage * SESSIONS_PER_PAGE;
+        els.sessionsFooter.innerHTML = `<button class="btn btn-ghost" id="loadMoreBtn">Charger ${rem} de plus</button>`;
+        $("loadMoreBtn")?.addEventListener("click", () => { app.sessionsPage++; render(); });
+      } else {
+        els.sessionsFooter.innerHTML = "";
+      }
+
+      // Tabs
       document.querySelectorAll(".mobile-tabs button").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.tab === app.tab);
       });
-
-      els.panels.forEach(panel => panel.classList.add("hidden"));
+      els.panels.forEach(p => p.classList.add("hidden"));
       if (isDesktop()) {
-        els.panels.forEach(panel => panel.classList.remove("hidden"));
+        els.panels.forEach(p => p.classList.remove("hidden"));
       } else {
-        const currentPanel = document.getElementById(`panel-${app.tab}`);
-        if (currentPanel) currentPanel.classList.remove("hidden");
+        $(`panel-${app.tab}`)?.classList.remove("hidden");
       }
     }
 
-    function openModal(id) {
-      const modal = document.getElementById(id);
-      if (modal) modal.classList.add("open");
-    }
-
-    function closeModal(id) {
-      const modal = document.getElementById(id);
-      if (modal) modal.classList.remove("open");
-    }
+    // ── MODALS ──────────────────────────────────────────────
+    function openModal(id) { $(id)?.classList.add("open"); }
+    function closeModal(id) { $(id)?.classList.remove("open"); }
 
     function openProjectModal(project = null) {
       app.editingProjectId = project?.id || null;
       els.projectModalTitle.textContent = project ? "Modifier le projet" : "Créer un projet";
       els.projectCodeInput.value = project?.code || "";
       els.projectNameInput.value = project?.name || "";
+      if (project) {
+        els.archiveToggleRow.classList.remove("hidden");
+        els.projectArchivedInput.checked = !!project.archived;
+      } else {
+        els.archiveToggleRow.classList.add("hidden");
+        els.projectArchivedInput.checked = false;
+      }
       openModal("projectModal");
       els.projectCodeInput.focus();
     }
@@ -880,111 +1161,92 @@
     function saveProject() {
       const code = els.projectCodeInput.value.trim().toUpperCase();
       const name = els.projectNameInput.value.trim();
-
-      if (!code) {
-        showToast("Le code projet est obligatoire.", "warn");
-        els.projectCodeInput.focus();
-        return;
+      if (!code) { showToast("Le code projet est obligatoire.", "warn"); els.projectCodeInput.focus(); return; }
+      if (app.state.projects.find(p => p.code === code && p.id !== app.editingProjectId)) {
+        showToast("Ce code existe déjà.", "warn"); els.projectCodeInput.focus(); return;
       }
-
-      const duplicate = app.state.projects.find(p => p.code === code && p.id !== app.editingProjectId);
-      if (duplicate) {
-        showToast("Ce code projet existe déjà.", "warn");
-        els.projectCodeInput.focus();
-        return;
-      }
-
       if (app.editingProjectId) {
-        app.state.projects = app.state.projects.map(p => p.id === app.editingProjectId ? { ...p, code, name } : p);
-        showToast("Projet modifié.");
+        const archived = els.projectArchivedInput.checked;
+        app.state.projects = app.state.projects.map(p =>
+          p.id === app.editingProjectId ? { ...p, code, name, archived } : p
+        );
+        showToast("Projet modifié ✓");
       } else {
         app.state.projects.push({ id: uid(), code, name, archived: false, createdAt: new Date().toISOString() });
-        showToast("Projet ajouté.");
+        showToast(`${code} créé ✓`);
       }
-
-      persist();
-      closeModal("projectModal");
-      render();
+      persist(); closeModal("projectModal"); render();
     }
 
-    function deleteProject(projectId) {
-      const linked = app.state.sessions.some(s => s.projectId === projectId) || app.state.activeSession?.projectId === projectId;
-      const project = getProjectById(projectId);
-      if (!project) return;
-
-      if (linked) {
-        app.state.projects = app.state.projects.map(p => p.id === projectId ? { ...p, archived: true } : p);
-        showToast("Projet archivé car il a déjà des sessions.", "warn");
-      } else {
-        app.state.projects = app.state.projects.filter(p => p.id !== projectId);
-        showToast("Projet supprimé.");
-      }
-      persist();
-      render();
-    }
-
-    function commitActiveSession(endIso, reason = "paused") {
+    function commitActiveSession(endIso) {
       if (!app.state.activeSession) return false;
       const startMs = new Date(app.state.activeSession.startedAt).getTime();
       const endMs = new Date(endIso).getTime();
-      if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
-        app.state.activeSession = null;
-        return false;
-      }
+      if (!isFinite(startMs) || !isFinite(endMs) || endMs <= startMs) { app.state.activeSession = null; return false; }
       app.state.sessions.push({
-        id: uid(),
-        projectId: app.state.activeSession.projectId,
-        startAt: new Date(startMs).toISOString(),
-        endAt: new Date(endMs).toISOString(),
+        id: uid(), projectId: app.state.activeSession.projectId,
+        startAt: new Date(startMs).toISOString(), endAt: new Date(endMs).toISOString(),
         note: app.state.activeSession.note || ""
       });
       app.state.activeSession = null;
       return true;
     }
 
+    function deleteProject(projectId) {
+      const project = getProjectById(projectId);
+      if (!project) return;
+      // Stop active session if it belongs to this project
+      if (app.state.activeSession?.projectId === projectId) {
+        commitActiveSession(new Date().toISOString());
+      }
+      const linked = app.state.sessions.some(s => s.projectId === projectId);
+      if (linked) {
+        app.state.projects = app.state.projects.map(p => p.id === projectId ? { ...p, archived: true } : p);
+        showToast(`${project.code} archivé (sessions existantes).`, "warn");
+        persist(); render();
+      } else {
+        app.state.projects = app.state.projects.filter(p => p.id !== projectId);
+        persist(); render();
+        showToast(`${project.code} supprimé.`, "success", () => {
+          app.state.projects.push(project); persist(); render();
+        });
+      }
+    }
+
     function startTimer(projectId) {
       const project = getProjectById(projectId);
       if (!project || project.archived) return;
+      if (app.state.activeSession?.projectId === projectId) { showToast("Ce projet est déjà actif.", "warn"); return; }
       const nowIso = new Date().toISOString();
-
-      if (app.state.activeSession?.projectId === projectId) {
-        showToast("Ce projet est déjà actif.", "warn");
-        return;
-      }
-
-      if (app.state.activeSession) {
-        commitActiveSession(nowIso, "switch");
-      }
-
+      if (app.state.activeSession) commitActiveSession(nowIso);
       app.state.activeSession = { projectId, startedAt: nowIso, note: "" };
-      persist();
-      render();
-      showToast(`Chrono lancé sur ${project.code}.`);
+      delete els.timerNoteInput.dataset.userEditing;
+      persist(); render();
+      showToast(`▶ ${project.code} — chrono lancé`);
     }
 
     function pauseTimer() {
       if (!app.state.activeSession) return;
-      const project = getActiveProject();
-      const ok = commitActiveSession(new Date().toISOString(), "pause");
-      persist();
-      render();
-      if (ok && project) showToast(`Chrono mis en pause pour ${project.code}.`);
+      const p = getActiveProject();
+      const ok = commitActiveSession(new Date().toISOString());
+      persist(); render();
+      if (ok && p) showToast(`⏸ Pause — ${p.code}`);
     }
 
     function stopTimer() {
       if (!app.state.activeSession) return;
-      const project = getActiveProject();
-      const ok = commitActiveSession(new Date().toISOString(), "stop");
-      persist();
-      render();
-      if (ok && project) showToast(`Chrono arrêté pour ${project.code}.`);
+      const p = getActiveProject();
+      const ok = commitActiveSession(new Date().toISOString());
+      persist(); render();
+      if (ok && p) showToast(`⏹ Arrêté — ${p.code}`);
     }
 
     function openManualModal(projectId) {
-      const project = getProjectById(projectId);
-      if (!project) return;
+      const p = getProjectById(projectId);
+      if (!p) return;
       app.manualProjectId = projectId;
-      els.manualProjectLabel.textContent = project.name ? `${project.code} — ${project.name}` : project.code;
+      els.manualProjectLabel.textContent = p.name ? `${p.code} — ${p.name}` : p.code;
+      els.manualProjectLabel.style.color = projectColor(p.code);
       els.manualMinutesInput.value = "";
       els.manualNoteInput.value = "";
       openModal("manualModal");
@@ -992,47 +1254,29 @@
     }
 
     function saveManualEntry() {
-      const projectId = app.manualProjectId;
-      const project = getProjectById(projectId);
-      if (!project) {
-        showToast("Projet introuvable.", "error");
-        return;
-      }
-
+      const p = getProjectById(app.manualProjectId);
+      if (!p) { showToast("Projet introuvable.", "error"); return; }
       const minutes = Number(els.manualMinutesInput.value);
-      if (!Number.isFinite(minutes) || minutes <= 0) {
-        showToast("Entre un nombre de minutes valide.", "warn");
-        els.manualMinutesInput.focus();
-        return;
-      }
-
-      const safeMinutes = Math.round(minutes);
-      const end = new Date();
-      const start = new Date(end.getTime() - safeMinutes * 60 * 1000);
-
+      if (!isFinite(minutes) || minutes <= 0) { showToast("Entre un nombre de minutes valide.", "warn"); els.manualMinutesInput.focus(); return; }
+      const safe = Math.round(minutes);
+      const end = new Date(), start = new Date(end - safe * 60000);
       app.state.sessions.push({
-        id: uid(),
-        projectId,
-        startAt: start.toISOString(),
-        endAt: end.toISOString(),
-        note: (els.manualNoteInput.value || "").trim() || `Ajout manuel ${safeMinutes} min`
+        id: uid(), projectId: app.manualProjectId,
+        startAt: start.toISOString(), endAt: end.toISOString(),
+        note: els.manualNoteInput.value.trim() || `Ajout manuel — ${safe} min`
       });
-
-      persist();
-      closeModal("manualModal");
-      render();
-      showToast(`${safeMinutes} min ajoutées à ${project.code}.`);
+      persist(); closeModal("manualModal"); render();
+      showToast(`+ ${safe} min → ${p.code}`);
     }
 
     function openSessionModal(session) {
       app.editingSessionId = session.id;
-      els.sessionProjectInput.innerHTML = app.state.projects.map(project => {
-        const label = project.name ? `${project.code} — ${project.name}` : project.code;
-        return `<option value="${project.id}">${escapeHtml(label)}</option>`;
-      }).join("");
+      els.sessionProjectInput.innerHTML = app.state.projects.map(p =>
+        `<option value="${p.id}">${escapeHtml(p.name ? `${p.code} — ${p.name}` : p.code)}</option>`
+      ).join("");
       els.sessionProjectInput.value = session.projectId;
-      els.sessionStartInput.value = toLocalDateTimeValue(session.startAt);
-      els.sessionEndInput.value = toLocalDateTimeValue(session.endAt);
+      els.sessionStartInput.value = toLocalDT(session.startAt);
+      els.sessionEndInput.value = toLocalDT(session.endAt);
       els.sessionNoteInput.value = session.note || "";
       openModal("sessionModal");
       els.sessionStartInput.focus();
@@ -1040,154 +1284,161 @@
 
     function saveSession() {
       if (!app.editingSessionId) return;
-
-      const startRaw = els.sessionStartInput.value;
-      const endRaw = els.sessionEndInput.value;
-      if (!startRaw || !endRaw) {
-        showToast("Début et fin sont obligatoires.", "warn");
-        return;
-      }
-
-      const startAt = new Date(startRaw);
-      const endAt = new Date(endRaw);
-
-      if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) {
-        showToast("Date invalide.", "warn");
-        return;
-      }
-
-      if (endAt.getTime() <= startAt.getTime()) {
-        showToast("La fin doit être après le début.", "warn");
-        return;
-      }
-
-      app.state.sessions = app.state.sessions.map(session => session.id === app.editingSessionId ? {
-        ...session,
-        projectId: els.sessionProjectInput.value,
-        startAt: startAt.toISOString(),
-        endAt: endAt.toISOString(),
-        note: els.sessionNoteInput.value.trim()
-      } : session);
-
-      persist();
-      closeModal("sessionModal");
-      render();
-      showToast("Session modifiée.");
+      const startRaw = els.sessionStartInput.value, endRaw = els.sessionEndInput.value;
+      if (!startRaw || !endRaw) { showToast("Début et fin sont obligatoires.", "warn"); return; }
+      const startAt = new Date(startRaw), endAt = new Date(endRaw);
+      if (isNaN(startAt) || isNaN(endAt)) { showToast("Date invalide.", "warn"); return; }
+      if (endAt <= startAt) { showToast("La fin doit être après le début.", "warn"); return; }
+      app.state.sessions = app.state.sessions.map(s =>
+        s.id === app.editingSessionId
+          ? { ...s, projectId: els.sessionProjectInput.value, startAt: startAt.toISOString(), endAt: endAt.toISOString(), note: els.sessionNoteInput.value.trim() }
+          : s
+      );
+      persist(); closeModal("sessionModal"); render();
+      showToast("Session modifiée ✓");
     }
 
     function deleteSession(sessionId) {
+      const session = app.state.sessions.find(s => s.id === sessionId);
+      if (!session) return;
       app.state.sessions = app.state.sessions.filter(s => s.id !== sessionId);
-      persist();
-      render();
-      showToast("Session supprimée.");
+      persist(); render();
+      showToast("Session supprimée.", "success", () => {
+        app.state.sessions.push(session);
+        app.state.sessions.sort((a,b) => new Date(a.startAt) - new Date(b.startAt));
+        persist(); render();
+      });
     }
 
-    function exportData() {
-      downloadJson("juuicyy-prod-time-tracker.json", app.state);
-      showToast("Export terminé.");
-    }
+    // ── EXPORT / IMPORT / RESET ─────────────────────────────
+    function exportData() { downloadJson("juuicyy-prod-time-tracker.json", app.state); showToast("Export terminé ✓"); }
 
     function importData(file) {
       if (!file) return;
       const reader = new FileReader();
       reader.onload = () => {
-        try {
-          app.state = safeParseState(reader.result);
-          persist();
-          render();
-          showToast("Import réussi.");
-        } catch (e) {
-          showToast("Import impossible.", "error");
-        }
+        try { app.state = safeParseState(reader.result); persist(); render(); showToast("Import réussi ✓"); }
+        catch { showToast("Import impossible.", "error"); }
       };
-      reader.onerror = () => showToast("Lecture du fichier impossible.", "error");
+      reader.onerror = () => showToast("Lecture impossible.", "error");
       reader.readAsText(file);
     }
 
     function resetAllData() {
-      if (!window.confirm("Supprimer toutes les données locales ?")) return;
-      app.state = defaultState(true);
-      persist();
-      render();
+      if (!confirm("Supprimer toutes les données locales ? Cette action est irréversible.")) return;
+      app.state = defaultState(true); persist(); render();
       showToast("Données réinitialisées.", "warn");
     }
 
-    document.querySelectorAll("[data-tab]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        app.tab = btn.dataset.tab;
-        render();
+    // ── COPY WEEKLY SUMMARY ─────────────────────────────────
+    function copyWeeklySummary() {
+      const week = getCurrentWeek();
+      const lines = [`Résumé semaine — ${weekLabel()}`, ""];
+      week.days.forEach(day => {
+        const dk = dateKey(day);
+        const entries = Object.entries(week.daily[dk]||{}).sort((a,b) => b[1]-a[1]);
+        const total = entries.reduce((a,[,v]) => a+v, 0);
+        if (!total) return;
+        lines.push(`${day.toLocaleDateString("fr-CA",{weekday:"long",day:"numeric",month:"short"})} — ${formatDurationShort(total)}`);
+        entries.forEach(([pid,dur]) => {
+          const p = getProjectById(pid);
+          lines.push(`  · ${p?.code||"Supprimé"}${p?.name?` (${p.name})`:""} : ${formatDurationShort(dur)}`);
+        });
+        lines.push("");
       });
+      lines.push(`Total : ${formatDurationShort(week.total)}`);
+      navigator.clipboard.writeText(lines.join("\n"))
+        .then(() => showToast("Résumé copié ✓"))
+        .catch(() => showToast("Impossible de copier.", "error"));
+    }
+
+    // ── EVENT LISTENERS ─────────────────────────────────────
+    document.querySelectorAll("[data-tab]").forEach(btn => {
+      btn.addEventListener("click", () => { app.tab = btn.dataset.tab; render(); });
     });
 
-    els.projectSearch.addEventListener("input", (e) => {
-      app.search = e.target.value;
-      render();
-    });
+    els.projectSearch.addEventListener("input", e => { app.search = e.target.value; render(); });
 
-    document.getElementById("newProjectDesktop").addEventListener("click", () => openProjectModal());
-    document.getElementById("newProjectMobile").addEventListener("click", () => openProjectModal());
+    // Live note on active session
+    els.timerNoteInput.addEventListener("input", e => {
+      els.timerNoteInput.dataset.userEditing = "1";
+      if (app.state.activeSession) {
+        app.state.activeSession.note = e.target.value;
+        clearTimeout(app._noteTimer);
+        app._noteTimer = setTimeout(persist, 600);
+      }
+    });
+    els.timerNoteInput.addEventListener("blur", () => { delete els.timerNoteInput.dataset.userEditing; });
+
+    $("newProjectDesktop")?.addEventListener("click", () => openProjectModal());
+    $("newProjectMobile")?.addEventListener("click", () => openProjectModal());
     els.saveProjectBtn.addEventListener("click", saveProject);
     els.saveSessionBtn.addEventListener("click", saveSession);
     els.saveManualBtn.addEventListener("click", saveManualEntry);
+    $("copyWeekBtn")?.addEventListener("click", copyWeeklySummary);
 
-    document.querySelectorAll('[data-close]').forEach(btn => {
+    // Modal close
+    document.querySelectorAll("[data-close]").forEach(btn => {
       btn.addEventListener("click", () => closeModal(btn.dataset.close));
     });
-
-    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-      backdrop.addEventListener("click", (e) => {
-        if (e.target === backdrop) backdrop.classList.remove("open");
-      });
+    document.querySelectorAll(".modal-backdrop").forEach(bd => {
+      bd.addEventListener("click", e => { if (e.target === bd) bd.classList.remove("open"); });
     });
 
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        document.querySelectorAll('.modal-backdrop.open').forEach(modal => modal.classList.remove("open"));
-      }
-    });
+    // Submit on Enter in inputs
+    els.projectCodeInput.addEventListener("keydown", e => { if (e.key==="Enter") saveProject(); });
+    els.projectNameInput.addEventListener("keydown", e => { if (e.key==="Enter") saveProject(); });
+    els.manualMinutesInput.addEventListener("keydown", e => { if (e.key==="Enter") saveManualEntry(); });
 
     els.pauseBtn.addEventListener("click", pauseTimer);
     els.stopBtn.addEventListener("click", stopTimer);
+    $("exportDesktop")?.addEventListener("click", exportData);
+    $("exportMobile")?.addEventListener("click", exportData);
+    $("resetDesktop")?.addEventListener("click", resetAllData);
+    $("resetMobile")?.addEventListener("click", resetAllData);
+    $("importDesktop")?.addEventListener("change", e => importData(e.target.files?.[0]));
+    $("importMobile")?.addEventListener("change", e => importData(e.target.files?.[0]));
 
-    document.getElementById("exportDesktop").addEventListener("click", exportData);
-    document.getElementById("exportMobile").addEventListener("click", exportData);
-    document.getElementById("resetDesktop").addEventListener("click", resetAllData);
-    document.getElementById("resetMobile").addEventListener("click", resetAllData);
-    document.getElementById("importDesktop").addEventListener("change", (e) => importData(e.target.files?.[0]));
-    document.getElementById("importMobile").addEventListener("change", (e) => importData(e.target.files?.[0]));
-
-    document.addEventListener("click", (e) => {
-      const target = e.target.closest("[data-action]");
-      if (!target) return;
-
-      const { action, id } = target.dataset;
-      if (action === "edit-project") {
-        const project = getProjectById(id);
-        if (project) openProjectModal(project);
-      }
+    // Delegated click
+    document.addEventListener("click", e => {
+      const t = e.target.closest("[data-action]");
+      if (!t) return;
+      const { action, id } = t.dataset;
+      if (action === "edit-project") { const p = getProjectById(id); if (p) openProjectModal(p); }
       if (action === "delete-project") deleteProject(id);
-      if (action === "start-project") startTimer(id);
+      if (action === "start-project") {
+        startTimer(id);
+        if (!isDesktop()) { app.tab = "today"; render(); }
+      }
       if (action === "quick-15") {
+        const p = getProjectById(id);
+        if (!p) return;
         app.manualProjectId = id;
-        els.manualProjectLabel.textContent = (getProjectById(id)?.name ? `${getProjectById(id).code} — ${getProjectById(id).name}` : getProjectById(id)?.code) || "";
+        els.manualProjectLabel.textContent = p.name ? `${p.code} — ${p.name}` : p.code;
         els.manualMinutesInput.value = "15";
-        els.manualNoteInput.value = "Ajout manuel 15 min";
+        els.manualNoteInput.value = "";
         saveManualEntry();
       }
       if (action === "quick-custom") openManualModal(id);
-      if (action === "edit-session") {
-        const session = app.state.sessions.find(s => s.id === id);
-        if (session) openSessionModal(session);
-      }
+      if (action === "edit-session") { const s = app.state.sessions.find(x => x.id===id); if (s) openSessionModal(s); }
       if (action === "delete-session") deleteSession(id);
     });
 
-    setInterval(() => {
-      app.now = Date.now();
-      render();
-    }, 1000);
+    // Keyboard shortcuts
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") { document.querySelectorAll(".modal-backdrop.open").forEach(m => m.classList.remove("open")); return; }
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.key === "p" || e.key === "P") { e.preventDefault(); pauseTimer(); }
+      if (e.key === "s" || e.key === "S") { e.preventDefault(); stopTimer(); }
+      if (e.key === "n" || e.key === "N") { e.preventDefault(); openProjectModal(); }
+    });
 
+    // ── LOOPS ────────────────────────────────────────────────
+    setInterval(() => { if (app.state.activeSession) tickUpdate(); }, 1000);
+    setInterval(render, 30000); // Full re-render every 30s to keep week totals fresh
     window.addEventListener("resize", render);
+
     render();
   </script>
 </body>

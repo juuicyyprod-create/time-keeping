@@ -1,10 +1,10 @@
 from pathlib import Path
-import zipfile, textwrap, json, os
+import zipfile
 
-base = Path("/mnt/data/juuicyy-time-tracker-static")
-base.mkdir(parents=True, exist_ok=True)
+clean_dir = Path("/mnt/data/juuicyy-time-tracker-static-clean")
+clean_dir.mkdir(parents=True, exist_ok=True)
 
-index_html = r'''<!DOCTYPE html>
+html = r'''<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
@@ -16,7 +16,6 @@ index_html = r'''<!DOCTYPE html>
     :root{
       --bg:#0b0c10;
       --panel:rgba(20,24,32,.82);
-      --panel-soft:rgba(255,255,255,.04);
       --line:rgba(255,255,255,.08);
       --line-strong:rgba(255,255,255,.16);
       --text:#f4f7fb;
@@ -24,7 +23,6 @@ index_html = r'''<!DOCTYPE html>
       --accent:#7c9cff;
       --accent-2:#a855f7;
       --ok:#22c55e;
-      --danger:#ef4444;
       --shadow:0 20px 60px rgba(0,0,0,.35);
       --radius-xl:28px;
       --radius-lg:20px;
@@ -79,7 +77,6 @@ index_html = r'''<!DOCTYPE html>
     .btn:hover:not(:disabled){transform:translateY(-1px)}
     .btn-primary{color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-2))}
     .btn-secondary{color:var(--text);background:rgba(255,255,255,.07);border:1px solid var(--line-strong)}
-    .btn-danger{color:#fff;background:linear-gradient(135deg,#dc2626,#ef4444)}
     .file-btn{position:relative;overflow:hidden}
     .file-btn input{position:absolute;inset:0;opacity:0;cursor:pointer}
     .stats-grid{margin-top:14px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -493,7 +490,6 @@ index_html = r'''<!DOCTYPE html>
       sessionEndInput: document.getElementById("sessionEndInput"),
       sessionNoteInput: document.getElementById("sessionNoteInput"),
       panels: document.querySelectorAll(".tab-panel"),
-      tabButtons: document.querySelectorAll(".mobile-tabs button"),
       pauseBtn: document.getElementById("pauseBtn"),
       stopBtn: document.getElementById("stopBtn"),
       saveProjectBtn: document.getElementById("saveProjectBtn"),
@@ -729,6 +725,10 @@ index_html = r'''<!DOCTYPE html>
       els.panels.forEach(panel => panel.classList.add("hidden"));
       const currentPanel = document.getElementById(`panel-${app.tab}`);
       if (currentPanel) currentPanel.classList.remove("hidden");
+
+      if (window.innerWidth >= 980) {
+        els.panels.forEach(panel => panel.classList.remove("hidden"));
+      }
     }
 
     function openModal(id) {
@@ -927,15 +927,9 @@ index_html = r'''<!DOCTYPE html>
         const project = app.state.projects.find(p => p.id === id);
         if (project) openProjectModal(project);
       }
-      if (action === "delete-project") {
-        deleteProject(id);
-      }
-      if (action === "start-project") {
-        startTimer(id);
-      }
-      if (action === "quick-15") {
-        quickAdd(id, 15);
-      }
+      if (action === "delete-project") deleteProject(id);
+      if (action === "start-project") startTimer(id);
+      if (action === "quick-15") quickAdd(id, 15);
       if (action === "quick-custom") {
         const value = window.prompt("Ajouter combien de minutes ?", "30");
         if (value !== null) quickAdd(id, value);
@@ -944,9 +938,7 @@ index_html = r'''<!DOCTYPE html>
         const session = app.state.sessions.find(s => s.id === id);
         if (session) openSessionModal(session);
       }
-      if (action === "delete-session") {
-        deleteSession(id);
-      }
+      if (action === "delete-session") deleteSession(id);
     });
 
     setInterval(() => {
@@ -954,41 +946,18 @@ index_html = r'''<!DOCTYPE html>
       render();
     }, 1000);
 
+    window.addEventListener("resize", render);
     render();
   </script>
 </body>
 </html>
 '''
 
-readme = """# Juuicyy Prod — Suivi de temps projets (HTML statique)
+(clean_dir / "index.html").write_text(html, encoding="utf-8")
 
-Déploiement direct sur GitHub Pages.
-
-## Utilisation
-- mets `index.html` à la racine du repo
-- active GitHub Pages sur la branche voulue
-- ouvre l'URL de la page
-
-## Fonctions
-- projets avec code type X1782
-- chrono actif unique
-- ajout manuel de temps
-- édition des sessions
-- résumé hebdo
-- sauvegarde locale navigateur
-- export / import JSON
-
-## Important
-La sauvegarde est locale au navigateur/appareil.
-"""
-
-(base / "index.html").write_text(index_html, encoding="utf-8")
-(base / "README.md").write_text(readme, encoding="utf-8")
-
-zip_path = Path("/mnt/data/juuicyy-time-tracker-static.zip")
+zip_path = Path("/mnt/data/juuicyy-time-tracker-static-clean.zip")
 with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-    for p in base.rglob("*"):
-        zf.write(p, p.relative_to(base))
+    zf.write(clean_dir / "index.html", "index.html")
 
 print(f"Created {zip_path}")
-print(f"Folder {base}")
+print(f"Created {(clean_dir / 'index.html')}")

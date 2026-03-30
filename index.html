@@ -3,936 +3,1251 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Juuicyy Prod — Devis et factures intelligents</title>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <title>Juuicyy Prod — Suivi de temps</title>
+  <meta name="description" content="Suivi de temps par projet, sauvegarde locale, résumé hebdomadaire." />
+  <meta name="theme-color" content="#080a0f" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;700;800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root{
-      --bg:#f3f6fb;
-      --bg2:#e8edf7;
-      --panel:rgba(255,255,255,.74);
-      --panel-solid:#ffffff;
-      --text:#0f172a;
-      --muted:#5b6474;
-      --line:#dbe3ef;
-      --soft:#eef3fa;
-      --primary:#0f172a;
-      --primary-text:#ffffff;
-      --success:#0f9f6e;
-      --warning:#c78700;
-      --danger:#d14343;
-      --shadow:0 18px 48px rgba(15,23,42,.10);
+    :root {
+      --bg: #080a0f;
+      --panel: rgba(14,17,25,.88);
+      --panel-2: rgba(255,255,255,.04);
+      --line: rgba(255,255,255,.07);
+      --line-strong: rgba(255,255,255,.14);
+      --text: #e8eaf0;
+      --muted: #6b7a8d;
+      --muted-2: #9aa3b2;
+      --accent: #f97316;
+      --accent-dim: rgba(249,115,22,.12);
+      --ok: #10b981;
+      --ok-dim: rgba(16,185,129,.12);
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --shadow: 0 16px 48px rgba(0,0,0,.45);
+      --shadow-xl: 0 32px 80px rgba(0,0,0,.6);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --max-width: 1200px;
+      --font-ui: 'Figtree', system-ui, sans-serif;
+      --font-head: 'Syne', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --mobile-nav-h: 76px;
     }
-    body.dark{
-      --bg:#07101d;
-      --bg2:#0d1728;
-      --panel:rgba(15,23,42,.72);
-      --panel-solid:#0f172a;
-      --text:#f7fafc;
-      --muted:#94a3b8;
-      --line:#223149;
-      --soft:#111c2e;
-      --primary:#f8fafc;
-      --primary-text:#0f172a;
-      --success:#26c281;
-      --warning:#f2b136;
-      --danger:#ff6a6a;
-      --shadow:0 22px 58px rgba(0,0,0,.32);
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; scroll-behavior: auto; }
+    html { overflow-x: hidden; }
+    body {
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      font-family: var(--font-ui);
+      font-size: 15px;
+      color: var(--text);
+      background: var(--bg);
+      overflow-x: hidden;
     }
-    *{box-sizing:border-box}
-    html,body{margin:0;padding:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(135deg,var(--bg),var(--bg2));color:var(--text)}
-    body{min-height:100vh}
-    button,input,select,textarea{font:inherit}
-    .app{max-width:1280px;margin:0 auto;padding:14px 14px 28px}
-    .glass{background:var(--panel);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:30px}
-    .header{padding:16px;display:flex;gap:14px;justify-content:space-between;align-items:flex-start;position:sticky;top:10px;z-index:20}
-    .brand h1{margin:0;font-size:1.7rem;line-height:1.1}
-    .brand p{margin:4px 0 0;color:var(--muted);font-size:.95rem}
-    .actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end}
-    .btn,.input,.select,.textarea{border:1px solid var(--line);background:var(--panel-solid);color:var(--text);border-radius:18px;padding:12px 14px;outline:none}
-    .btn{cursor:pointer;transition:.18s ease;font-weight:600}
-    .btn:hover{transform:translateY(-1px)}
-    .btn.primary{background:var(--primary);color:var(--primary-text);border-color:transparent}
-    .btn.secondary{background:var(--soft)}
-    .btn.ghost{background:transparent}
-    .btn.danger{background:rgba(209,67,67,.12);color:var(--danger);border-color:rgba(209,67,67,.2)}
-    .icon-btn{width:46px;height:46px;display:grid;place-items:center;padding:0}
-    .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:8px;margin-top:14px}
-    .tab{padding:13px 10px;border-radius:18px;border:0;background:transparent;color:var(--muted);font-weight:700;cursor:pointer}
-    .tab.active{background:var(--panel-solid);color:var(--text);box-shadow:0 8px 24px rgba(15,23,42,.08)}
-    .page{display:none;margin-top:14px}
-    .page.active{display:block}
-    .grid{display:grid;gap:14px}
-    .stats{grid-template-columns:repeat(4,1fr)}
-    .card{padding:18px}
-    .stat .label{font-size:.92rem;color:var(--muted)}
-    .stat .value{font-size:1.7rem;font-weight:800;margin-top:4px}
-    .split{display:grid;grid-template-columns:1.25fr .85fr;gap:14px}
-    .section-title{font-size:1.05rem;font-weight:800;margin:0 0 4px}
-    .section-sub{font-size:.92rem;color:var(--muted);margin:0}
-    .quick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:14px}
-    .mini{padding:18px;border-radius:22px;background:var(--soft);border:1px solid var(--line)}
-    .mini .big{font-size:1.9rem;font-weight:800;margin-top:8px}
-    .filters{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px}
-    .documents{display:grid;gap:12px}
-    .doc{padding:16px;display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
-    .doc-title{font-size:1.1rem;font-weight:800;margin:0}
-    .meta{font-size:.92rem;color:var(--muted);margin-top:4px}
-    .badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
-    .badge{display:inline-flex;align-items:center;padding:7px 10px;border-radius:999px;font-size:.8rem;font-weight:700;border:1px solid var(--line);background:var(--soft)}
-    .badge.success{color:var(--success);background:rgba(15,159,110,.12);border-color:rgba(15,159,110,.2)}
-    .badge.warn{color:var(--warning);background:rgba(199,135,0,.14);border-color:rgba(199,135,0,.18)}
-    .badge.danger{color:var(--danger);background:rgba(209,67,67,.12);border-color:rgba(209,67,67,.18)}
-    .doc-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
-    .settings-grid,.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-    .field{display:flex;flex-direction:column;gap:7px}
-    .field.full{grid-column:1/-1}
-    .field label{font-size:.92rem;font-weight:700}
-    .textarea{min-height:120px;resize:vertical}
-    .clients-list{display:grid;gap:10px}
-    .client-row{padding:12px 14px;border-radius:18px;background:var(--soft);border:1px solid var(--line)}
-    .empty{padding:34px 20px;text-align:center;color:var(--muted)}
-    .footer{padding:20px 4px 6px;text-align:center;color:var(--muted);font-size:.84rem}
-    .modal{position:fixed;inset:0;background:linear-gradient(180deg, rgba(2,6,23,.32), rgba(2,6,23,.58));display:none;align-items:stretch;justify-content:center;padding:0;z-index:50}
-    .modal.open{display:flex}
-    .modal-panel{width:100%;height:100vh;max-height:100vh;overflow:hidden;border-radius:0;background:var(--panel-solid);border:0;box-shadow:none}
-    .modal-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:0;background:color-mix(in srgb, var(--panel-solid) 88%, transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);z-index:3}
-    .editor{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(340px,.7fr);height:calc(100vh - 78px)}
-    .editor-main{padding:22px;overflow:auto}
-    .editor-side{padding:22px;border-left:1px solid var(--line);background:var(--soft);overflow:auto}
-    .line-list{display:grid;gap:12px}
-    .line-item{padding:16px;border-radius:26px;background:var(--soft);border:1px solid var(--line)}
-    .line-grid{display:grid;grid-template-columns:1.35fr 1.65fr .72fr .95fr auto;gap:10px;align-items:end}
-    .line-total{margin-top:10px;text-align:right;color:var(--muted);font-size:.9rem;font-weight:700}
-    .suggestions{display:flex;flex-wrap:wrap;gap:8px}
-    .totals{display:grid;gap:10px}
-    .totals .row{display:flex;align-items:center;justify-content:space-between;color:var(--muted)}
-    .totals .row.total{padding-top:12px;border-top:1px solid var(--line);font-size:1.18rem;font-weight:800;color:var(--text)}
-    .helper{padding:14px;border-radius:22px;border:1px dashed var(--line);color:var(--muted);font-size:.86rem}
-    .hidden{display:none !important}
-    @media (max-width: 1024px){
-      .stats{grid-template-columns:repeat(2,1fr)}
-      .split,.editor{grid-template-columns:1fr}
-      .editor{height:auto}
-      .editor-side{border-left:0;border-top:1px solid var(--line)}
-      .filters{grid-template-columns:1fr 1fr}
-      .line-grid{grid-template-columns:1fr 1fr}
+    body.modal-open {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      overflow: hidden;
     }
-    @media (max-width: 720px){
-      .app{padding:10px 10px 22px}
-      .header{padding:14px;border-radius:24px;position:static}
-      .brand h1{font-size:1.35rem}
-      .actions{width:100%;justify-content:stretch}
-      .actions .btn,.actions .select{flex:1}
-      .tabs{position:sticky;top:10px;z-index:15}
-      .stats,.quick-grid,.filters,.settings-grid,.form-grid{grid-template-columns:1fr}
-      .doc{flex-direction:column}
-      .doc-actions{justify-content:stretch}
-      .doc-actions .btn{flex:1}
-      .modal-panel{width:100%;height:100vh;max-height:100vh;border-radius:0}
-      .modal-head{padding:14px;align-items:flex-start;flex-direction:column}
-      .editor-main,.editor-side{padding:14px}
-      .line-grid{grid-template-columns:1fr}
-      .sticky-mobile{position:sticky;bottom:0;background:linear-gradient(180deg, rgba(0,0,0,0), var(--soft) 18%);padding-top:10px}
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 70% 45% at 10% 0%, rgba(249,115,22,.09) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 35% at 90% 8%, rgba(251,146,60,.06) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 50% at 50% 100%, rgba(249,115,22,.04) 0%, transparent 50%);
+      pointer-events: none; z-index: 0;
+    }
+    .app-shell { position: relative; z-index: 1; min-height: 100vh; padding: 20px 16px 32px; }
+    .app-wrap { max-width: var(--max-width); margin: 0 auto; }
+    button, input, select, textarea { font: inherit; touch-action: manipulation; }
+    button { cursor: pointer; }
+    input, select, textarea {
+      width: 100%;
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-md);
+      padding: 11px 14px;
+      outline: none;
+      transition: border-color .15s, background .15s, box-shadow .15s;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      background: rgba(249,115,22,.04);
+      box-shadow: 0 0 0 3px rgba(249,115,22,.1);
+    }
+    input::placeholder, textarea::placeholder { color: var(--muted); }
+    select option { background: #1a1d26; }
+    textarea { resize: vertical; }
+
+    .hero-card {
+      display: grid; gap: 20px; grid-template-columns: 1fr;
+      padding: 24px;
+      border-radius: var(--radius-xl);
+      background: rgba(255,255,255,.035);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+    .brand {
+      font-family: var(--font-head);
+      font-size: .75rem; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--accent);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .brand-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+      animation: brand-pulse 2.5s ease infinite;
+    }
+    @keyframes brand-pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+    .hero-card h1 {
+      font-family: var(--font-head);
+      font-size: clamp(1.7rem, 4vw, 2.7rem);
+      font-weight: 800; line-height: 1.05;
+      letter-spacing: -.025em;
+      margin-top: 10px;
+    }
+    .subtitle { margin-top: 6px; color: var(--muted-2); font-size: .9rem; max-width: 55ch; }
+    .hero-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .desktop-only { display: none; }
+    .mobile-only-inline { display: inline-flex; }
+
+    .btn {
+      border: 0; border-radius: var(--radius-md);
+      padding: 10px 16px; min-height: 44px; font-weight: 600; font-size: .875rem;
+      transition: transform .12s ease, opacity .12s ease, box-shadow .15s ease, background .15s ease;
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 7px; white-space: nowrap; cursor: pointer;
+    }
+    .btn:disabled { cursor: not-allowed; opacity: .4; }
+    .btn:not(:disabled):hover { transform: translateY(-1px); }
+    .btn:not(:disabled):active { transform: translateY(0); }
+    .btn-primary {
+      color: #fff; background: var(--accent);
+      box-shadow: 0 4px 16px rgba(249,115,22,.28);
+    }
+    .btn-primary:not(:disabled):hover { box-shadow: 0 6px 22px rgba(249,115,22,.45); }
+    .btn-secondary {
+      color: var(--text); background: rgba(255,255,255,.07);
+      border: 1px solid var(--line-strong);
+    }
+    .btn-secondary:not(:disabled):hover { background: rgba(255,255,255,.11); }
+    .btn-ghost {
+      color: var(--muted-2); background: transparent;
+      border: 1px solid var(--line); padding: 9px 14px; font-size: .82rem;
+    }
+    .btn-ghost:not(:disabled):hover { color: var(--text); border-color: var(--line-strong); background: rgba(255,255,255,.04); }
+    .file-btn { position: relative; overflow: hidden; }
+    .file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+    .stats-grid {
+      margin-top: 14px;
+      display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px;
+    }
+    .stat-card {
+      padding: 16px;
+      background: var(--panel-2);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line);
+      position: relative; overflow: hidden;
+      transition: border-color .3s;
+    }
+    .stat-card::after {
+      content: ''; position: absolute;
+      top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+      transform: scaleX(0); transform-origin: left;
+      transition: transform .4s ease;
+    }
+    .stat-card.lit::after { transform: scaleX(1); }
+    .stat-card.lit { border-color: rgba(249,115,22,.2); }
+    .stat-label {
+      font-size: .7rem; font-weight: 700;
+      letter-spacing: .07em; text-transform: uppercase;
+      color: var(--muted);
+    }
+    .stat-value {
+      font-family: var(--font-mono);
+      font-size: 1.05rem; font-weight: 700;
+      margin-top: 8px; word-break: break-word;
+    }
+    .stat-meta { margin-top: 4px; color: var(--muted); font-size: .74rem; }
+
+    .mobile-tabs {
+      position: fixed; left: 16px; right: 16px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 40;
+      display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px;
+      padding: 6px;
+      background: rgba(8,10,15,.94); border: 1px solid var(--line);
+      border-radius: 20px; box-shadow: var(--shadow);
+      backdrop-filter: blur(24px);
+    }
+    .mobile-tabs button {
+      border: 0; background: transparent;
+      color: var(--muted-2); border-radius: 14px;
+      padding: 10px 6px; min-height: 48px; font-weight: 600; font-size: .8rem;
+      transition: color .15s, background .15s, box-shadow .15s;
+    }
+    .mobile-tabs button.active {
+      background: var(--accent); color: #fff;
+      box-shadow: 0 2px 14px rgba(249,115,22,.35);
+    }
+
+    .panel {
+      scroll-margin-top: 88px;
+      margin-top: 14px; padding: 20px;
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: var(--radius-xl); box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
+    }
+    .panel-title-row {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 12px; margin-bottom: 18px;
+    }
+    .panel-title-row h2 {
+      font-family: var(--font-head);
+      font-size: 1.15rem; font-weight: 700; letter-spacing: -.01em;
+    }
+    .panel-title-row p { margin-top: 3px; color: var(--muted); font-size: .84rem; }
+    .panel-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+    .timer-card {
+      padding: 24px; border-radius: var(--radius-lg);
+      background: rgba(255,255,255,.035); border: 1px solid var(--line);
+      position: relative; overflow: hidden;
+      transition: border-color .4s, box-shadow .4s;
+    }
+    .timer-card.running {
+      border-color: rgba(249,115,22,.35);
+      box-shadow: 0 0 48px rgba(249,115,22,.08), inset 0 0 32px rgba(249,115,22,.03);
+    }
+    .timer-card-glow {
+      position: absolute; top: -60px; right: -60px;
+      width: 200px; height: 200px; border-radius: 50%;
+      pointer-events: none; opacity: 0;
+      transition: opacity .5s;
+    }
+    .timer-card.running .timer-card-glow { opacity: 1; }
+    .timer-top { display: flex; align-items: center; gap: 10px; }
+    .timer-dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--muted); flex-shrink: 0;
+      transition: background .3s, box-shadow .3s;
+    }
+    .timer-card.running .timer-dot {
+      background: var(--ok);
+      box-shadow: 0 0 0 0 rgba(16,185,129,.6);
+      animation: live-pulse 1.6s ease infinite;
+    }
+    @keyframes live-pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(16,185,129,.7); }
+      70%  { box-shadow: 0 0 0 7px rgba(16,185,129,0); }
+      100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+    }
+    .timer-eyebrow {
+      font-size: .7rem; font-weight: 700;
+      letter-spacing: .09em; text-transform: uppercase; color: var(--muted);
+    }
+    .timer-project {
+      margin-top: 14px;
+      font-family: var(--font-head);
+      font-size: 1.6rem; font-weight: 800; letter-spacing: -.03em;
+    }
+    .timer-subtitle { margin-top: 4px; color: var(--muted-2); font-size: .88rem; }
+    .timer-value {
+      margin-top: 20px;
+      font-family: var(--font-mono);
+      font-size: clamp(2.5rem, 8vw, 4.8rem);
+      font-weight: 800; line-height: 1;
+      letter-spacing: -.04em; font-variant-numeric: tabular-nums;
+    }
+    .timer-note-row { margin-top: 16px; }
+    .timer-note-row input { font-size: .95rem; padding: 11px 12px; }
+    .action-row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+
+    .stack { display: grid; gap: 14px; }
+    .subpanel {
+      background: rgba(255,255,255,.03); border: 1px solid var(--line);
+      border-radius: var(--radius-lg); padding: 16px;
+    }
+    .subpanel.compact { margin-top: 16px; }
+    .subpanel-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .subpanel-head h3 { font-family: var(--font-head); font-size: .92rem; font-weight: 700; }
+    .subpanel-total { font-family: var(--font-mono); font-size: .82rem; font-weight: 600; color: var(--accent); }
+
+    .summary-item { padding: 12px 0; border-top: 1px solid var(--line); }
+    .summary-item:first-of-type { border-top: 0; padding-top: 0; }
+    .summary-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .summary-name { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: .9rem; }
+    .summary-dur { font-family: var(--font-mono); font-size: .82rem; color: var(--muted-2); white-space: nowrap; }
+    .summary-meta { margin-top: 3px; color: var(--muted); font-size: .76rem; }
+    .progress { margin-top: 8px; height: 4px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,.06); }
+    .progress span { display: block; height: 100%; border-radius: inherit; transition: width .5s ease; }
+    .color-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+
+    .search-box { margin-bottom: 14px; }
+
+    .project-list, .session-list, .accordion-list { display: grid; gap: 10px; }
+    .project-card {
+      padding: 16px; border-radius: var(--radius-lg);
+      background: rgba(255,255,255,.03); border: 1px solid var(--line);
+      transition: border-color .2s, background .2s;
+    }
+    .project-card:hover { border-color: var(--line-strong); background: rgba(255,255,255,.05); }
+    .project-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .project-info h3 {
+      font-family: var(--font-head); font-size: 1.08rem; font-weight: 700;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .project-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .project-name { color: var(--muted-2); font-size: .84rem; margin-top: 3px; }
+    .project-meta { display: flex; gap: 6px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+    .pill {
+      font-size: .69rem; padding: 4px 8px; border-radius: 999px;
+      font-weight: 700; background: rgba(255,255,255,.07);
+      border: 1px solid var(--line); letter-spacing: .02em;
+    }
+    .pill.active { background: var(--ok-dim); color: #6ee7b7; border-color: rgba(16,185,129,.28); }
+    .pill.archived { color: var(--muted); }
+    .pill.week { background: var(--accent-dim); color: #fdba74; border-color: rgba(249,115,22,.25); }
+    .icon-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .icon-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 40px; min-height: 40px;
+      background: rgba(255,255,255,.05); color: var(--muted-2);
+      border: 1px solid var(--line); border-radius: var(--radius-sm); font-size: .9rem;
+      transition: color .15s, background .15s, border-color .15s;
+      cursor: pointer;
+    }
+    .icon-btn:hover { color: var(--text); background: rgba(255,255,255,.1); border-color: var(--line-strong); }
+    .icon-btn.danger:hover { color: var(--danger); border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.07); }
+    .project-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+    .project-actions .btn { flex: 1 1 90px; }
+
+    .session-card {
+      padding: 14px 16px; border-radius: var(--radius-lg);
+      background: rgba(255,255,255,.03); border: 1px solid var(--line);
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      transition: border-color .2s;
+    }
+    .session-card:hover { border-color: var(--line-strong); }
+    .session-main { min-width: 0; flex: 1; }
+    .session-card h3 {
+      font-family: var(--font-head); font-size: .92rem; font-weight: 700;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .session-meta { color: var(--muted); font-size: .76rem; margin-top: 4px; }
+    .session-duration { font-family: var(--font-mono); font-weight: 700; color: var(--text); margin-top: 6px; font-size: .88rem; }
+    .session-note { color: var(--muted-2); font-size: .79rem; margin-top: 4px; font-style: italic; }
+    .sessions-footer { display: flex; justify-content: center; padding-top: 12px; }
+
+    .day-accordion {
+      border: 1px solid var(--line); border-radius: var(--radius-md);
+      background: rgba(255,255,255,.02); overflow: hidden;
+    }
+    .day-accordion summary {
+      list-style: none; display: flex; align-items: center;
+      justify-content: space-between; gap: 12px;
+      padding: 12px 16px; cursor: pointer; user-select: none;
+    }
+    .day-accordion summary::-webkit-details-marker { display: none; }
+    .day-accordion[open] .chevron { transform: rotate(90deg); }
+    .chevron { color: var(--muted); transition: transform .2s ease; font-size: 1.05rem; }
+    .accordion-content { padding: 0 16px 12px; border-top: 1px solid var(--line); }
+    .day-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
+    .day-row:last-child { border-bottom: 0; }
+    .day-name { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: .85rem; }
+    .day-dur { font-family: var(--font-mono); font-size: .8rem; color: var(--muted-2); }
+    .day-total { font-family: var(--font-mono); font-size: .8rem; font-weight: 600; color: var(--accent); }
+
+    .empty {
+      padding: 28px 16px; border-radius: var(--radius-md); text-align: center;
+      color: var(--muted); background: rgba(255,255,255,.02);
+      border: 1px dashed var(--line); font-size: .87rem;
+    }
+    .empty.sm { padding: 16px; }
+    .empty-icon { display: block; font-size: 1.8rem; margin-bottom: 8px; opacity: .35; }
+
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 60;
+      background: rgba(0,0,0,.65); backdrop-filter: blur(8px);
+      display: none; place-items: center; padding: 16px;
+    }
+    .modal-backdrop.open { display: grid; }
+    .modal-panel {
+      width: min(100%, 520px);
+      max-height: min(88vh, 760px);
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      background: rgba(11,14,21,.98);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); padding: 22px;
+      animation: modal-in .2s cubic-bezier(.2,.8,.4,1);
+    }
+    @keyframes modal-in {
+      from { opacity: 0; transform: scale(.95) translateY(10px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .modal-head h3 { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid label span {
+      display: block; font-size: .75rem; font-weight: 700;
+      color: var(--muted-2); margin-bottom: 7px;
+      letter-spacing: .06em; text-transform: uppercase;
+    }
+    .archive-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+    .archive-row input[type=checkbox] { width: auto; padding: 0; border: none; background: none; box-shadow: none; accent-color: var(--accent); width: 16px; height: 16px; }
+    .archive-row span { color: var(--muted-2); font-size: .9rem; }
+    .modal-actions { margin-top: 20px; display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+    .settings-text { color: var(--muted-2); font-size: .84rem; margin: 6px 0 14px; line-height: 1.6; }
+
+    .app-footer { margin-top: 22px; text-align: center; color: var(--muted); font-size: .78rem; padding-bottom: 10px; }
+    .shortcuts-row { margin-top: 5px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .kbd {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,.07); border: 1px solid var(--line-strong);
+      border-radius: 5px; padding: 1px 6px;
+      font-family: var(--font-mono); font-size: .68rem; color: var(--muted-2);
+    }
+    .shortcut-hint { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: .72rem; }
+
+    .toast-wrap { position: fixed; right: 16px; bottom: calc(var(--mobile-nav-h) + 22px + env(safe-area-inset-bottom, 0px)); z-index: 80; display: grid; gap: 8px; pointer-events: none; min-width: 240px; }
+    .toast {
+      padding: 11px 14px; border-radius: var(--radius-md);
+      border: 1px solid var(--line-strong); background: rgba(12,15,22,.97);
+      box-shadow: var(--shadow); font-size: .86rem;
+      pointer-events: all; display: flex; align-items: center; gap: 10px;
+      animation: toast-in .22s cubic-bezier(.2,.8,.4,1);
+    }
+    @keyframes toast-in { from { opacity:0; transform:translateX(12px); } to { opacity:1; transform:translateX(0); } }
+    .toast-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .toast.success .toast-dot { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+    .toast.warn .toast-dot { background: var(--warn); }
+    .toast.error .toast-dot { background: var(--danger); }
+    .toast-msg { flex: 1; }
+    .toast-undo {
+      margin-left: 4px; background: none; border: 1px solid var(--line-strong);
+      color: var(--accent); border-radius: 6px; padding: 3px 9px;
+      font-size: .76rem; font-weight: 700; cursor: pointer; transition: background .15s;
+    }
+    .toast-undo:hover { background: var(--accent-dim); }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 759px) {
+      input, select, textarea { font-size: 16px; }
+      .app-shell { padding-bottom: calc(var(--mobile-nav-h) + 34px + env(safe-area-inset-bottom, 0px)); }
+      .app-footer { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+      .project-actions .btn, .action-row .btn, .hero-actions .btn { flex: 1 1 calc(50% - 8px); }
+    }
+    @media (min-width: 760px) {
+      .app-shell { padding: 28px 24px; }
+      .hero-card { grid-template-columns: 1fr auto; align-items: end; }
+      .desktop-only { display: flex; }
+      .mobile-only-inline { display: none; }
+      .stats-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
+    }
+    @media (min-width: 980px) {
+      .mobile-tabs { display: none; }
+      .toast-wrap { bottom: 16px; }
+      .panel { margin-top: 18px; }
+      .stack { grid-template-columns: 1.1fr 1fr; }
     }
   </style>
-<style id="nova-timekeeping-theme">
-  :root{
-    --bg:#080a0f !important;
-    --bg2:#0b0e15 !important;
-    --panel:rgba(14,17,25,.88) !important;
-    --panel-solid:rgba(11,14,21,.98) !important;
-    --text:#e8eaf0 !important;
-    --muted:#6b7a8d !important;
-    --line:rgba(255,255,255,.07) !important;
-    --line-strong:rgba(255,255,255,.14) !important;
-    --soft:rgba(255,255,255,.035) !important;
-    --primary:#f97316 !important;
-    --primary-text:#ffffff !important;
-    --success:#10b981 !important;
-    --warning:#f59e0b !important;
-    --danger:#ef4444 !important;
-    --accent:#f97316 !important;
-    --accent-dim:rgba(249,115,22,.12) !important;
-    --shadow:0 16px 48px rgba(0,0,0,.45) !important;
-    --shadow-xl:0 32px 80px rgba(0,0,0,.6) !important;
-    --radius-xl:24px !important;
-    --radius-lg:18px !important;
-    --radius-md:12px !important;
-    --radius-sm:8px !important;
-    --font-ui:'Figtree',system-ui,sans-serif !important;
-    --font-head:'Syne',sans-serif !important;
-    --font-mono:'JetBrains Mono',monospace !important;
-  }
-  html,body{
-    font-family:var(--font-ui) !important;
-    background:var(--bg) !important;
-    color:var(--text) !important;
-  }
-  body{
-    min-height:100vh;
-    overflow-x:hidden;
-  }
-  body.modal-open{
-    position:fixed;
-    inset:0;
-    width:100%;
-    overflow:hidden;
-    touch-action:none;
-  }
-  body::before{
-    content:'';
-    position:fixed; inset:0;
-    background:
-      radial-gradient(ellipse 70% 45% at 10% 0%, rgba(249,115,22,.09) 0%, transparent 55%),
-      radial-gradient(ellipse 50% 35% at 90% 8%, rgba(251,146,60,.06) 0%, transparent 55%),
-      radial-gradient(ellipse 60% 50% at 50% 100%, rgba(249,115,22,.04) 0%, transparent 50%);
-    pointer-events:none; z-index:0;
-  }
-  body.dark{color-scheme:dark;}
-  .app{
-    position:relative; z-index:1;
-    max-width:1200px;
-    margin:0 auto;
-    padding:20px 16px 32px !important;
-  }
-  button,input,select,textarea{font:inherit}
-  input::placeholder, textarea::placeholder{color:var(--muted) !important;}
-  select option{background:#1a1d26;color:var(--text);}
-  .glass,.card,.mini,.client-row,.line-item,.helper,.doc,.header,.tabs{box-shadow:var(--shadow) !important;}
-  .glass{
-    background:var(--panel) !important;
-    border:1px solid var(--line) !important;
-    border-radius:var(--radius-xl) !important;
-    backdrop-filter:blur(20px) !important;
-    -webkit-backdrop-filter:blur(20px) !important;
-  }
-  .header{
-    padding:24px !important;
-    display:grid !important;
-    grid-template-columns:minmax(0,1fr) auto;
-    align-items:end !important;
-    gap:20px !important;
-    position:relative !important;
-    top:auto !important;
-    z-index:1 !important;
-    background:rgba(255,255,255,.035) !important;
-  }
-  .brand{min-width:0;}
-  .brand-kicker{
-    font-family:var(--font-head);
-    font-size:.75rem;
-    font-weight:700;
-    letter-spacing:.12em;
-    text-transform:uppercase;
-    color:var(--accent);
-    display:flex;
-    align-items:center;
-    gap:8px;
-    margin-bottom:10px;
-  }
-  .brand-dot{
-    width:6px;height:6px;border-radius:50%;
-    background:var(--accent);
-    box-shadow:0 0 10px var(--accent);
-    animation:brand-pulse 2.5s ease infinite;
-    flex:0 0 auto;
-  }
-  @keyframes brand-pulse{0%,100%{opacity:1}50%{opacity:.4}}
-  .brand h1{
-    margin:0 !important;
-    font-family:var(--font-head) !important;
-    font-size:clamp(1.7rem,4vw,2.6rem) !important;
-    font-weight:800 !important;
-    line-height:1.05 !important;
-    letter-spacing:-.025em !important;
-    color:var(--text) !important;
-  }
-  .brand p,.section-sub,.meta,.footer,.field label,.helper,.stat .label{color:#9aa3b2 !important;}
-  .brand p{margin:6px 0 0 !important; font-size:.92rem !important; max-width:60ch;}
-  .actions{display:flex;gap:8px !important;align-items:center;flex-wrap:wrap;justify-content:flex-end}
-  .btn,.input,.select,.textarea,.badge,.icon-btn{
-    font-family:var(--font-ui) !important;
-    border-radius:var(--radius-md) !important;
-    border:1px solid var(--line-strong) !important;
-    background:rgba(255,255,255,.05) !important;
-    color:var(--text) !important;
-    transition:border-color .15s, background .15s, transform .12s ease, box-shadow .15s ease !important;
-  }
-  .tab{font-family:var(--font-ui) !important;transition:border-color .15s, background .15s, transform .12s ease, box-shadow .15s ease !important;}
-  .input,.select,.textarea{width:100%;padding:11px 14px !important;outline:none !important}
-  .input:focus,.select:focus,.textarea:focus{
-    border-color:var(--accent) !important;
-    background:rgba(249,115,22,.04) !important;
-    box-shadow:0 0 0 3px rgba(249,115,22,.1) !important;
-  }
-  .btn{padding:10px 16px !important;font-weight:600 !important;font-size:.875rem !important;white-space:nowrap}
-  .btn:hover,.icon-btn:hover{transform:translateY(-1px)}
-  .btn.primary{
-    background:var(--accent) !important;color:#fff !important;border-color:transparent !important;
-    box-shadow:0 4px 16px rgba(249,115,22,.28) !important;
-  }
-  .btn.primary:hover{box-shadow:0 6px 22px rgba(249,115,22,.45) !important;}
-  .btn.secondary{background:rgba(255,255,255,.07) !important}
-  .btn.ghost{background:transparent !important;color:#9aa3b2 !important;border:1px solid var(--line) !important}
-  .btn.danger{color:var(--danger) !important;background:rgba(239,68,68,.07) !important;border-color:rgba(239,68,68,.28) !important}
-  .icon-btn{min-width:42px;min-height:42px;display:inline-flex;align-items:center;justify-content:center}
-  #themeBtn{display:none !important}
-  .tabs{
-    margin-top:14px !important;padding:6px !important;display:grid !important;
-    grid-template-columns:repeat(3,minmax(0,1fr));gap:6px !important;
-    background:rgba(8,10,15,.92) !important;border-radius:20px !important;
-    position:sticky;top:10px;z-index:30;
-  }
-  .tab{
-    padding:10px 6px !important;border:0 !important;background:transparent !important;
-    color:#9aa3b2 !important;font-weight:600 !important;font-size:.86rem !important;border-radius:14px !important;cursor:pointer;
-  }
-  .tab.active{background:var(--accent) !important;color:#fff !important;box-shadow:0 2px 14px rgba(249,115,22,.35) !important}
-  .page{margin-top:14px !important}
-  .stats{grid-template-columns:repeat(4,minmax(0,1fr)) !important;gap:10px !important}
-  .stat,.mini,.client-row,.doc,.line-item,.helper{
-    background:rgba(255,255,255,.03) !important;
-    border:1px solid var(--line) !important;
-    border-radius:var(--radius-lg) !important;
-  }
-  .stat .value,.big,#sumTotal,#sumSubTotal,#sumTPS,#sumTVQ,#sumDiscount,.line-total{font-family:var(--font-mono) !important}
-  .stat .value,.big{font-size:1.5rem !important;font-weight:800 !important;color:var(--text) !important}
-  .card{padding:20px !important}
-  .section-title{
-    font-family:var(--font-head) !important;
-    font-size:1.15rem !important;font-weight:700 !important;
-    letter-spacing:-.01em !important;color:var(--text) !important;
-  }
-  .split,.grid,.quick-grid,.filters,.settings-grid,.form-grid,.documents,.clients-list,.line-list,.totals{gap:14px !important}
-  .doc{padding:16px !important;align-items:flex-start !important;min-width:0}
-  .doc > div:first-child{min-width:0; flex:1 1 auto}
-  .doc-title{font-family:var(--font-head) !important;font-size:1.06rem !important;color:var(--text) !important;overflow-wrap:anywhere}
-  .doc-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;align-self:stretch}
-  .badge{
-    font-size:.69rem !important;padding:4px 8px !important;border-radius:999px !important;
-    font-weight:700 !important;background:rgba(255,255,255,.07) !important;letter-spacing:.02em !important;
-  }
-  .badge.success{background:rgba(16,185,129,.12) !important;color:#6ee7b7 !important;border-color:rgba(16,185,129,.28) !important}
-  .badge.warn{background:rgba(249,115,22,.12) !important;color:#fdba74 !important;border-color:rgba(249,115,22,.25) !important}
-  .badge.danger{background:rgba(239,68,68,.09) !important;color:#fca5a5 !important;border-color:rgba(239,68,68,.25) !important}
-  .footer{padding:22px 4px 8px !important;font-size:.78rem !important}
-  .modal{
-    background:rgba(0,0,0,.65) !important;
-    backdrop-filter:blur(8px) !important;
-    -webkit-backdrop-filter:blur(8px) !important;
-    padding:16px !important;
-    align-items:center !important;
-  }
-  .modal-panel{
-    width:min(100%, 1320px) !important;
-    height:min(calc(var(--app-vh, 1vh) * 92), 960px) !important;
-    max-height:calc(var(--app-vh, 1vh) * 92) !important;
-    background:rgba(11,14,21,.98) !important;
-    border:1px solid var(--line-strong) !important;
-    border-radius:24px !important;
-    box-shadow:var(--shadow-xl) !important;
-    overflow:hidden !important;
-  }
-  .modal-head{
-    padding:18px 20px !important;border-bottom:1px solid var(--line) !important;
-    background:rgba(11,14,21,.92) !important;box-shadow:none !important;
-  }
-  .modal-head > div:first-child > div:first-child,#editorTitle{
-    font-family:var(--font-head) !important;font-weight:700 !important;color:var(--text) !important;
-  }
-  .editor{
-    background:transparent !important;
-    grid-template-columns:minmax(0,1.4fr) minmax(320px,.75fr) !important;
-    height:calc(100% - 78px) !important;
-    min-height:0 !important;
-  }
-  .editor-main{padding:22px !important;overflow:auto;background:transparent !important;min-width:0}
-  .editor-side{
-    padding:22px !important;border-left:1px solid var(--line) !important;
-    background:rgba(255,255,255,.02) !important;overflow:auto;min-width:0
-  }
-  .totals .row{color:#9aa3b2 !important}
-  .totals .row.total{padding-top:12px !important;border-top:1px solid var(--line) !important;color:var(--text) !important}
-  .line-grid{
-    display:grid !important;
-    grid-template-columns:minmax(0,1.2fr) minmax(0,1.5fr) minmax(88px,.65fr) minmax(110px,.85fr) auto !important;
-    gap:10px !important;align-items:end !important;
-  }
-  .line-grid > .field,.line-grid input{min-width:0}
-  .line-total{color:#9aa3b2 !important;font-size:.82rem !important;text-align:right}
-  .helper{font-size:.86rem !important;border-style:dashed !important}
-  .sticky-mobile{background:transparent !important}
-  @media (max-width:1024px){
-    .stats{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
-    .split,.editor{grid-template-columns:1fr !important}
-    .editor{height:auto !important}
-    .editor-side{border-left:0 !important;border-top:1px solid var(--line) !important}
-    .filters{grid-template-columns:1fr 1fr !important}
-  }
-  @media (max-width:720px){
-    .app{padding:20px 16px 32px !important}
-    .header{grid-template-columns:1fr !important;align-items:start !important;padding:24px !important}
-    .actions{justify-content:stretch !important}
-    .actions .btn,.actions .select{flex:1 1 calc(50% - 8px)}
-    .stats,.quick-grid,.filters,.settings-grid,.form-grid{grid-template-columns:1fr !important}
-    .doc{flex-direction:column !important}
-    .doc-actions{justify-content:stretch !important;width:100%}
-    .doc-actions .btn{flex:1 1 calc(50% - 8px)}
-    .modal{padding:0 !important;align-items:stretch !important}
-    .modal-panel{width:100% !important;height:calc(var(--app-vh, 1vh) * 100) !important;max-height:calc(var(--app-vh, 1vh) * 100) !important;border-radius:0 !important;border:0 !important}
-    .modal-head{padding:14px !important;align-items:flex-start !important;flex-direction:column !important}
-    .editor-main,.editor-side{padding:14px !important}
-    .line-grid{grid-template-columns:1fr !important}
-  }
-</style>
 </head>
 <body>
-  <div class="app">
-    <header class="glass header">
-      <div class="brand">
-        <div class="brand-kicker"><span class="brand-dot"></span>Juuicyy Prod</div>
-        <h1>Devis &amp; factures</h1>
-        <p>Création rapide, calcul automatique et export PDF dans la DA Juuicyy Prod.</p>
-      </div>
-      <div class="actions">
-        <select id="businessSelect" class="select"></select>
-        <button class="btn primary" id="newQuoteBtn">Nouveau devis</button>
-        <button class="btn secondary" id="newInvoiceBtn">Nouvelle facture</button>
-        <button class="btn ghost icon-btn" id="themeBtn" title="Mode sombre">🌙</button>
-      </div>
-    </header>
+  <div class="app-shell">
+    <div class="app-wrap">
 
-    <nav class="glass tabs">
-      <button class="tab active" data-tab="dashboard">Dashboard</button>
-      <button class="tab" data-tab="documents">Documents</button>
-      <button class="tab" data-tab="settings">Réglages</button>
-    </nav>
+      <header class="hero-card">
+        <div>
+          <div class="brand"><span class="brand-dot"></span>Juuicyy Prod</div>
+          <h1>Suivi de temps</h1>
+          <p class="subtitle">Chronos par code projet, ajout rapide et résumé hebdo propre.</p>
+        </div>
+        <div class="hero-actions desktop-only">
+          <button class="btn btn-ghost" id="exportDesktop" type="button">↑ Exporter</button>
+          <label class="btn btn-ghost file-btn">↓ Importer<input type="file" id="importDesktop" accept="application/json"></label>
+          <button class="btn btn-ghost" id="resetDesktop" type="button">Reset</button>
+          <button class="btn btn-primary" id="newProjectDesktop" type="button">+ Nouveau projet</button>
+        </div>
+      </header>
 
-    <section class="page active" id="page-dashboard">
-      <div class="grid stats" id="statsGrid"></div>
-      <div class="split" style="margin-top:14px">
-        <article class="glass card">
-          <h3 class="section-title">Vue rapide</h3>
-          <p class="section-sub">Semaine et mois en un coup d’œil</p>
-          <div class="quick-grid">
-            <div class="mini">
-              <div class="section-sub">Revenu 7 jours</div>
-              <div class="big" id="weekRevenue">0 $</div>
-            </div>
-            <div class="mini">
-              <div class="section-sub">Revenu 30 jours</div>
-              <div class="big" id="monthRevenue">0 $</div>
-            </div>
+      <section class="stats-grid">
+        <div class="stat-card" id="statCardActive">
+          <div class="stat-label">Projet actif</div>
+          <div class="stat-value" id="statActive">Aucun</div>
+          <div class="stat-meta" id="statActiveMeta">Prêt</div>
+        </div>
+        <div class="stat-card" id="statCardChrono">
+          <div class="stat-label">Chrono</div>
+          <div class="stat-value" id="statChrono">00:00:00</div>
+          <div class="stat-meta" id="statChronoMeta">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Aujourd'hui</div>
+          <div class="stat-value" id="statToday">0 min</div>
+          <div class="stat-meta" id="statTodayMeta"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Cette semaine</div>
+          <div class="stat-value" id="statWeek">0 min</div>
+          <div class="stat-meta" id="statWeekMeta"></div>
+        </div>
+      </section>
+
+      <nav class="mobile-tabs" aria-label="Navigation mobile">
+        <button class="active" data-tab="today" type="button">Aujourd'hui</button>
+        <button data-tab="projects" type="button">Projets</button>
+        <button data-tab="week" type="button">Semaine</button>
+        <button data-tab="sessions" type="button">Sessions</button>
+      </nav>
+
+      <section class="panel tab-panel" id="panel-today">
+        <div class="panel-title-row">
+          <div><h2>Chrono</h2><p>Vue principale rapide pendant la journée.</p></div>
+        </div>
+
+        <div class="timer-card" id="timerCard">
+          <div class="timer-card-glow" id="timerGlow"></div>
+          <div class="timer-top">
+            <div class="timer-dot" id="timerDot"></div>
+            <div class="timer-eyebrow" id="timerEyebrow">Aucun projet actif</div>
           </div>
-        </article>
-        <article class="glass card">
-          <h3 class="section-title">Clients récents</h3>
-          <p class="section-sub">Auto-complétion rapide</p>
-          <div class="clients-list" id="recentClients"></div>
-        </article>
-      </div>
-    </section>
-
-    <section class="page" id="page-documents">
-      <article class="glass card">
-        <div class="filters">
-          <input id="searchInput" class="input" placeholder="Rechercher client, projet, numéro..." />
-          <select id="typeFilter" class="select">
-            <option value="all">Tous les types</option>
-            <option value="quote">Devis</option>
-            <option value="invoice">Factures</option>
-          </select>
-          <select id="statusFilter" class="select">
-            <option value="all">Tous les statuts</option>
-            <option value="brouillon">Brouillon</option>
-            <option value="accepté">Accepté</option>
-            <option value="refusé">Refusé</option>
-            <option value="annulé">Annulé</option>
-            <option value="en attente">En attente</option>
-            <option value="payé">Payé</option>
-          </select>
-          <select id="dateFilter" class="select">
-            <option value="all">Toutes dates</option>
-            <option value="week">7 jours</option>
-            <option value="month">30 jours</option>
-          </select>
+          <div class="timer-project" id="timerProject">—</div>
+          <div class="timer-subtitle" id="timerSubtitle">Lance un projet depuis l'onglet Projets.</div>
+          <div class="timer-value" id="timerValue">00:00:00</div>
+          <div class="timer-note-row" id="timerNoteRow" style="display:none">
+            <input type="text" id="timerNoteInput" placeholder="Note sur la session en cours…">
+          </div>
         </div>
-      </article>
-      <div class="documents" id="documentsList" style="margin-top:14px"></div>
-    </section>
 
-    <section class="page" id="page-settings">
-      <article class="glass card">
-        <h3 class="section-title">Business actif</h3>
-        <p class="section-sub">Infos utilisées pour les PDF et la numérotation</p>
-        <div class="settings-grid" style="margin-top:14px">
-          <div class="field"><label>Nom</label><input id="setName" class="input"></div>
-          <div class="field"><label>Sous-titre</label><input id="setSubtitle" class="input"></div>
-          <div class="field full"><label>Adresse</label><input id="setAddress" class="input"></div>
-          <div class="field"><label>Email</label><input id="setEmail" class="input"></div>
-          <div class="field"><label>Téléphone</label><input id="setPhone" class="input"></div>
-          <div class="field"><label>Préfixe devis</label><input id="setQuotePrefix" class="input"></div>
-          <div class="field"><label>Préfixe facture</label><input id="setInvoicePrefix" class="input"></div>
-          <div class="field"><label>TPS #</label><input id="setTPS" class="input"></div>
-          <div class="field"><label>TVQ #</label><input id="setTVQ" class="input"></div>
-          <div class="field full"><label>Notes par défaut</label><textarea id="setNotes" class="textarea"></textarea></div>
+        <div class="action-row">
+          <button class="btn btn-secondary" id="pauseBtn" type="button">⏸ Pause</button>
+          <button class="btn btn-secondary" id="stopBtn" type="button">⏹ Stop</button>
         </div>
-      </article>
-    </section>
 
-    <footer class="footer">© Juuicyy Prod — Tous droits réservés</footer>
+        <div class="stack" style="margin-top:14px">
+          <div class="subpanel">
+            <div class="subpanel-head">
+              <h3>Aujourd'hui</h3>
+              <span class="subpanel-total" id="todayTotalLabel">0 min</span>
+            </div>
+            <div id="todayEntries"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel tab-panel hidden" id="panel-projects">
+        <div class="panel-title-row">
+          <div><h2>Projets</h2><p>Lance ou ajoute du temps rapidement.</p></div>
+          <button class="btn btn-primary mobile-only-inline" id="newProjectMobile" type="button">+ Nouveau</button>
+        </div>
+        <div class="search-box">
+          <input type="text" id="projectSearch" placeholder="🔍  Chercher par code ou nom…">
+        </div>
+        <div class="project-list" id="projectList"></div>
+      </section>
+
+      <section class="panel tab-panel hidden" id="panel-week">
+        <div class="panel-title-row">
+          <div><h2>Résumé semaine</h2><p id="weekLabel"></p></div>
+          <div class="panel-actions">
+            <button class="btn btn-ghost" id="copyWeekBtn" type="button">📋 Copier</button>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="subpanel">
+            <div class="subpanel-head">
+              <h3>Par jour</h3>
+              <span class="subpanel-total" id="weekTotalLabel">0 min</span>
+            </div>
+            <div class="accordion-list" id="weekDays"></div>
+          </div>
+          <div class="subpanel">
+            <div class="subpanel-head">
+              <h3>Par projet</h3>
+              <span class="subpanel-total" id="weekProjectTotalLabel">0 min</span>
+            </div>
+            <div id="weekProjects"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel tab-panel hidden" id="panel-sessions">
+        <div class="panel-title-row">
+          <div><h2>Sessions</h2><p>Historique complet et édition manuelle.</p></div>
+        </div>
+        <div class="session-list" id="sessionList"></div>
+        <div class="sessions-footer" id="sessionsFooter"></div>
+        <div class="subpanel compact">
+          <h3 style="font-family:var(--font-head);font-size:.92rem;font-weight:700;">Données</h3>
+          <p class="settings-text">Sauvegarde locale dans le navigateur. Exporte ton JSON pour transférer vers un autre appareil.</p>
+          <div class="hero-actions">
+            <button class="btn btn-ghost" id="exportMobile" type="button">↑ Exporter</button>
+            <label class="btn btn-ghost file-btn">↓ Importer<input type="file" id="importMobile" accept="application/json"></label>
+            <button class="btn btn-ghost" id="resetMobile" type="button">Reset</button>
+          </div>
+        </div>
+      </section>
+
+      <footer class="app-footer">
+        © Juuicyy Prod — Tous droits réservés
+        <div class="shortcuts-row">
+          <span class="shortcut-hint"><span class="kbd">P</span> Pause</span>
+          <span class="shortcut-hint"><span class="kbd">S</span> Stop</span>
+          <span class="shortcut-hint"><span class="kbd">N</span> Nouveau projet</span>
+          <span class="shortcut-hint"><span class="kbd">Esc</span> Fermer</span>
+        </div>
+      </footer>
+    </div>
   </div>
 
-  <div class="modal" id="editorModal">
+  <div class="modal-backdrop" id="projectModal">
     <div class="modal-panel">
       <div class="modal-head">
-        <div>
-          <div style="font-weight:800;font-size:1.1rem" id="editorTitle">Édition du devis</div>
-          <div style="color:var(--muted);font-size:.92rem" id="editorSubtitle">DEV-001</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
-          <button class="btn" id="headDuplicateBtn">Dupliquer</button>
-          <button class="btn secondary" id="headConvertBtn">Convertir en facture</button>
-          <button class="btn primary" id="headSaveBtn">Enregistrer</button>
-          <button class="btn ghost" id="closeEditorBtn">Fermer</button>
+        <h3 id="projectModalTitle">Créer un projet</h3>
+        <button class="icon-btn" data-close="projectModal" aria-label="Fermer" type="button">✕</button>
+      </div>
+      <div class="form-grid">
+        <label><span>Code projet *</span><input type="text" id="projectCodeInput" placeholder="Ex. X1782"></label>
+        <label><span>Nom</span><input type="text" id="projectNameInput" placeholder="Optionnel"></label>
+        <div id="archiveToggleRow" class="hidden">
+          <span style="display:block;font-size:.75rem;font-weight:700;color:var(--muted-2);margin-bottom:7px;letter-spacing:.06em;text-transform:uppercase;">Statut</span>
+          <div class="archive-row">
+            <input type="checkbox" id="projectArchivedInput">
+            <span>Projet archivé</span>
+          </div>
         </div>
       </div>
-      <div class="editor">
-        <div class="editor-main">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px">
-            <div>
-              <div class="section-title">Informations du document</div>
-              <div class="section-sub">Client, projet, statut et dates</div>
-            </div>
-            <div class="badge">Création rapide optimisée mobile</div>
-          </div>
-
-          <div class="form-grid">
-            <div class="field">
-              <label>Client</label>
-              <input id="docClientName" class="input" list="clientsDatalist" placeholder="Nom du client">
-              <datalist id="clientsDatalist"></datalist>
-            </div>
-            <div class="field"><label>Contact</label><input id="docContact" class="input"></div>
-            <div class="field"><label>Email</label><input id="docEmail" class="input"></div>
-            <div class="field"><label>Téléphone</label><input id="docPhone" class="input"></div>
-            <div class="field"><label>Projet</label><input id="docProject" class="input"></div>
-            <div class="field"><label>Statut</label><select id="docStatus" class="select"></select></div>
-            <div class="field"><label>Date</label><input id="docIssueDate" type="date" class="input"></div>
-            <div class="field" id="expiryField"><label>Expiration</label><input id="docExpiryDate" type="date" class="input"></div>
-          </div>
-
-          <div style="height:1px;background:var(--line);margin:18px 0"></div>
-
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-            <div>
-              <div class="section-title">Services / produits</div>
-              <div class="section-sub">Lignes dynamiques avec calcul automatique</div>
-            </div>
-            <button class="btn secondary" id="addLineBtn">Ajouter une ligne</button>
-          </div>
-
-          <div class="suggestions" id="serviceSuggestions" style="margin-bottom:12px"></div>
-          <div class="line-list" id="lineList"></div>
-
-          <div style="height:1px;background:var(--line);margin:18px 0"></div>
-
-          <div class="form-grid">
-            <div class="field"><label>Type de remise</label>
-              <select id="docDiscountType" class="select">
-                <option value="percent">Pourcentage</option>
-                <option value="fixed">Montant fixe</option>
-              </select>
-            </div>
-            <div class="field"><label>Valeur de remise</label><input id="docDiscountValue" type="number" min="0" step="0.01" class="input"></div>
-            <div class="field"><label>TPS %</label><input id="docTpsRate" type="number" min="0" step="0.001" class="input"></div>
-            <div class="field"><label>TVQ %</label><input id="docTvqRate" type="number" min="0" step="0.001" class="input"></div>
-            <div class="field full"><label>Notes</label><textarea id="docNotes" class="textarea"></textarea></div>
-          </div>
-        </div>
-
-        <aside class="editor-side">
-          <div class="glass card" style="background:var(--panel-solid);margin-bottom:12px">
-            <div class="section-title">Résumé financier</div>
-            <div class="section-sub" style="margin-bottom:14px">Calcul en temps réel, sans erreur</div>
-            <div class="totals">
-              <div class="row"><span>Sous-total</span><strong id="sumSubTotal">0 $</strong></div>
-              <div class="row"><span>Remise</span><strong id="sumDiscount">0 $</strong></div>
-              <div class="row"><span>TPS</span><strong id="sumTPS">0 $</strong></div>
-              <div class="row"><span>TVQ</span><strong id="sumTVQ">0 $</strong></div>
-              <div class="row total"><span>Total</span><span id="sumTotal">0 $</span></div>
-            </div>
-          </div>
-
-          <div class="glass card sticky-mobile" style="background:var(--panel-solid);margin-bottom:12px">
-            <div class="section-title">Raccourcis</div>
-            <div class="section-sub" style="margin:4px 0 14px">Les actions principales restent visibles</div>
-            <div style="display:grid;gap:8px">
-              <button class="btn primary" id="saveDocBtn">Enregistrer</button>
-              <button class="btn" id="exportPdfBtn">Export PDF</button>
-              <button class="btn secondary" id="convertBtn">Convertir en facture</button>
-              <button class="btn ghost" id="duplicateBtn">Dupliquer</button>
-            </div>
-          </div>
-
-          <div class="glass card" style="background:var(--panel-solid)">
-            <div class="section-title">Infos utiles</div>
-            <div class="helper" style="margin-top:12px">Sauvegarde locale automatique · Historique persistant · HTML autonome · Mobile friendly</div>
-          </div>
-        </aside>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" data-close="projectModal" type="button">Annuler</button>
+        <button class="btn btn-primary" id="saveProjectBtn" type="button">Enregistrer</button>
       </div>
     </div>
   </div>
 
+  <div class="modal-backdrop" id="sessionModal">
+    <div class="modal-panel">
+      <div class="modal-head">
+        <h3>Modifier la session</h3>
+        <button class="icon-btn" data-close="sessionModal" aria-label="Fermer" type="button">✕</button>
+      </div>
+      <div class="form-grid">
+        <label><span>Projet</span><select id="sessionProjectInput"></select></label>
+        <label><span>Début</span><input type="datetime-local" id="sessionStartInput"></label>
+        <label><span>Fin</span><input type="datetime-local" id="sessionEndInput"></label>
+        <label><span>Note</span><textarea rows="3" id="sessionNoteInput" placeholder="Optionnel"></textarea></label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" data-close="sessionModal" type="button">Annuler</button>
+        <button class="btn btn-primary" id="saveSessionBtn" type="button">Sauvegarder</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="manualModal">
+    <div class="modal-panel">
+      <div class="modal-head">
+        <h3>Ajout manuel</h3>
+        <button class="icon-btn" data-close="manualModal" aria-label="Fermer" type="button">✕</button>
+      </div>
+      <div class="form-grid">
+        <div>
+          <span style="display:block;font-size:.75rem;font-weight:700;color:var(--muted-2);margin-bottom:7px;letter-spacing:.06em;text-transform:uppercase;">Projet</span>
+          <div id="manualProjectLabel" style="font-weight:700;font-size:.95rem;padding:4px 0;"></div>
+        </div>
+        <label><span>Durée (minutes)</span><input type="number" id="manualMinutesInput" min="1" step="1" placeholder="Ex. 30"></label>
+        <label><span>Note</span><input type="text" id="manualNoteInput" placeholder="Optionnel"></label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" data-close="manualModal" type="button">Annuler</button>
+        <button class="btn btn-primary" id="saveManualBtn" type="button">Ajouter</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-wrap" id="toastWrap"></div>
+
   <script>
-    const STORAGE_KEY = 'juuicyy_prod_quote_invoice_html_v3';
-    const state = {
-      theme: 'dark',
-      activeTab: 'dashboard',
-      selectedBusinessId: 'default-business',
-      businesses: [{
-        id: 'default-business',
-        name: 'Juuicyy Prod',
-        subtitle: 'Devis et factures intelligents',
-        address: 'Québec, Canada',
-        email: 'contact@juuicyyprod.com',
-        phone: '',
-        tpsNumber: '',
-        tvqNumber: '',
-        defaultNotes: 'Paiement dû selon les conditions convenues.',
-        quotePrefix: 'DEV',
-        invoicePrefix: 'FAC',
-        nextQuoteNumber: 1,
-        nextInvoiceNumber: 1,
-      }],
-      clients: [],
-      servicesCatalog: [],
-      documents: [],
-      filters: { search:'', type:'all', status:'all', date:'all' },
-      editor: null,
+    const STORAGE_KEY = "juuicyy-prod-time-tracker-static-v2";
+    const SESSIONS_PER_PAGE = 30;
+
+    function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+    function pad(n) { return String(n).padStart(2, "0"); }
+    function dateKey(d) {
+      const dt = new Date(d);
+      return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
+    }
+    function startOfWeek(d = new Date()) {
+      const dt = new Date(d);
+      const day = dt.getDay();
+      dt.setHours(0,0,0,0);
+      dt.setDate(dt.getDate() + (day === 0 ? -6 : 1 - day));
+      return dt;
+    }
+    function endOfWeek(d = new Date()) {
+      const dt = startOfWeek(d);
+      dt.setDate(dt.getDate() + 6);
+      dt.setHours(23,59,59,999);
+      return dt;
+    }
+    function weekLabel(d = new Date()) {
+      return `${startOfWeek(d).toLocaleDateString("fr-CA")} → ${endOfWeek(d).toLocaleDateString("fr-CA")}`;
+    }
+    function formatDuration(ms) {
+      const t = Math.max(0, Math.floor(ms / 1000));
+      return `${pad(Math.floor(t/3600))}:${pad(Math.floor((t%3600)/60))}:${pad(t%60)}`;
+    }
+    function formatDurationShort(ms) {
+      const m = Math.max(0, Math.round(ms / 60000));
+      const h = Math.floor(m / 60), rem = m % 60;
+      if (h && rem) return `${h} h ${rem} min`;
+      if (h) return `${h} h`;
+      return `${m} min`;
+    }
+    function toLocalDT(iso) {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return "";
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+    function overlap(s, e, rs, re) { return Math.max(0, Math.min(e, re) - Math.max(s, rs)); }
+    function downloadJson(filename, data) {
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type:"application/json"}));
+      const a = document.createElement("a");
+      a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+    }
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replaceAll("&","&amp;").replaceAll("<","&lt;")
+        .replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+    }
+    function projectHue(code) {
+      let h = 0;
+      for (let i = 0; i < code.length; i++) h = ((h << 5) - h + code.charCodeAt(i)) | 0;
+      return ((h & 0x7FFFFFFF) % 360);
+    }
+    function projectColor(code) { return `hsl(${projectHue(code)}, 72%, 65%)`; }
+    function projectColorDim(code) { return `hsla(${projectHue(code)}, 72%, 50%, 0.18)`; }
+
+    function defaultState(samples = true) {
+      return {
+        projects: samples ? [
+          { id: uid(), code: "X1782", name: "Projet exemple", archived: false, createdAt: new Date().toISOString() },
+          { id: uid(), code: "X2041", name: "Autre dossier", archived: false, createdAt: new Date().toISOString() },
+        ] : [],
+        sessions: [],
+        activeSession: null
+      };
+    }
+    function sanitizeProject(p) {
+      if (!p || typeof p !== "object") return null;
+      const code = String(p.code || "").trim().toUpperCase();
+      if (!code) return null;
+      return {
+        id: String(p.id || uid()), code,
+        name: String(p.name || "").trim(),
+        archived: !!p.archived,
+        createdAt: typeof p.createdAt === "string" ? p.createdAt : new Date().toISOString()
+      };
+    }
+    function sanitizeSession(s, validIds) {
+      if (!s || typeof s !== "object") return null;
+      const projectId = String(s.projectId || "");
+      const startAt = new Date(s.startAt), endAt = new Date(s.endAt);
+      if (!validIds.has(projectId)) return null;
+      if (isNaN(startAt) || isNaN(endAt) || endAt <= startAt) return null;
+      return {
+        id: String(s.id || uid()), projectId,
+        startAt: startAt.toISOString(), endAt: endAt.toISOString(),
+        note: String(s.note || "").trim()
+      };
+    }
+    function sanitizeActiveSession(as, validIds) {
+      if (!as || typeof as !== "object") return null;
+      const projectId = String(as.projectId || "");
+      const startedAt = new Date(as.startedAt);
+      if (!validIds.has(projectId) || isNaN(startedAt)) return null;
+      return { projectId, startedAt: startedAt.toISOString(), note: String(as.note || "").trim() };
+    }
+    function normalizeState(raw) {
+      const src = raw && typeof raw === "object" ? raw : {};
+      const projects = [];
+      const seenIds = new Set(), seenCodes = new Set();
+      for (const p of (Array.isArray(src.projects) ? src.projects.map(sanitizeProject).filter(Boolean) : [])) {
+        if (!seenIds.has(p.id) && !seenCodes.has(p.code)) {
+          seenIds.add(p.id); seenCodes.add(p.code); projects.push(p);
+        }
+      }
+      const finalProjects = projects.length ? projects : defaultState(true).projects;
+      const validIds = new Set(finalProjects.map(p => p.id));
+      const sessions = (Array.isArray(src.sessions)
+        ? src.sessions.map(s => sanitizeSession(s, validIds)).filter(Boolean)
+        : []).sort((a,b) => new Date(a.startAt) - new Date(b.startAt));
+      return { projects: finalProjects, sessions, activeSession: sanitizeActiveSession(src.activeSession, validIds) };
+    }
+    function safeParseState(raw) {
+      try { return normalizeState(JSON.parse(raw)); }
+      catch { return defaultState(true); }
+    }
+
+    const app = {
+      state: (() => { const r = localStorage.getItem(STORAGE_KEY); return r ? safeParseState(r) : defaultState(true); })(),
+      now: Date.now(),
+      tab: "today",
+      search: "",
+      editingProjectId: null,
+      editingSessionId: null,
+      manualProjectId: null,
+      sessionsPage: 1,
+      _noteTimer: null,
+      _lastViewportMode: window.innerWidth >= 980,
+      _lastViewportWidth: window.innerWidth,
+      _scrollLockY: 0,
+      _loopTimer: null,
+      _lastRenderDateKey: dateKey(new Date()),
+      _lastRenderWeekLabel: weekLabel(),
+      _resizeTimer: null
     };
 
-    const qs = (s,p=document)=>p.querySelector(s);
-    const qsa = (s,p=document)=>Array.from(p.querySelectorAll(s));
-    const uid = ()=> (window.crypto && crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-    const clone = (value)=> typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value));
-    const clamp = (value, min=0, max=Number.POSITIVE_INFINITY)=>{
-      const n = Number(value);
-      if (!Number.isFinite(n)) return min;
-      return Math.min(max, Math.max(min, n));
+    const $ = id => document.getElementById(id);
+    const els = {
+      statActive: $("statActive"), statActiveMeta: $("statActiveMeta"),
+      statChrono: $("statChrono"), statChronoMeta: $("statChronoMeta"),
+      statCardActive: $("statCardActive"), statCardChrono: $("statCardChrono"),
+      statToday: $("statToday"), statTodayMeta: $("statTodayMeta"),
+      statWeek: $("statWeek"), statWeekMeta: $("statWeekMeta"),
+      timerCard: $("timerCard"), timerGlow: $("timerGlow"),
+      timerEyebrow: $("timerEyebrow"), timerProject: $("timerProject"),
+      timerSubtitle: $("timerSubtitle"), timerValue: $("timerValue"),
+      timerNoteRow: $("timerNoteRow"), timerNoteInput: $("timerNoteInput"),
+      todayTotalLabel: $("todayTotalLabel"), todayEntries: $("todayEntries"),
+      projectList: $("projectList"),
+      weekLabel: $("weekLabel"),
+      weekTotalLabel: $("weekTotalLabel"), weekProjectTotalLabel: $("weekProjectTotalLabel"),
+      weekDays: $("weekDays"), weekProjects: $("weekProjects"),
+      sessionList: $("sessionList"), sessionsFooter: $("sessionsFooter"),
+      projectSearch: $("projectSearch"),
+      projectModalTitle: $("projectModalTitle"),
+      projectCodeInput: $("projectCodeInput"), projectNameInput: $("projectNameInput"),
+      projectArchivedInput: $("projectArchivedInput"), archiveToggleRow: $("archiveToggleRow"),
+      sessionProjectInput: $("sessionProjectInput"),
+      sessionStartInput: $("sessionStartInput"), sessionEndInput: $("sessionEndInput"), sessionNoteInput: $("sessionNoteInput"),
+      manualProjectLabel: $("manualProjectLabel"), manualMinutesInput: $("manualMinutesInput"), manualNoteInput: $("manualNoteInput"),
+      panels: document.querySelectorAll(".tab-panel"),
+      pauseBtn: $("pauseBtn"), stopBtn: $("stopBtn"),
+      saveProjectBtn: $("saveProjectBtn"), saveSessionBtn: $("saveSessionBtn"), saveManualBtn: $("saveManualBtn"),
+      toastWrap: $("toastWrap")
     };
-    const sanitizePrefix = (value, fallback)=>{
-      const cleaned = String(value || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 12);
-      return cleaned || fallback;
-    };
-    const validLines = (lines=[]) => lines
-      .map(line => ({
-        ...line,
-        name: String(line.name || '').trim(),
-        description: String(line.description || '').trim(),
-        quantity: clamp(line.quantity, 0),
-        unitPrice: clamp(line.unitPrice, 0),
-      }))
-      .filter(line => line.name || line.description || line.quantity > 0 || line.unitPrice > 0);
-    const supportsClipboard = () => !!(navigator.clipboard && navigator.clipboard.writeText);
-    const today = ()=> new Date().toISOString().slice(0,10);
-    const plusDays = (d)=> new Date(Date.now()+d*86400000).toISOString().slice(0,10);
-    const money = (v)=> new Intl.NumberFormat('fr-CA',{style:'currency',currency:'CAD',maximumFractionDigits:2}).format(Number(v||0));
-    const formatDate = (v)=> v ? new Intl.DateTimeFormat('fr-CA',{dateStyle:'medium'}).format(new Date(v)) : '—';
-    const selectedBusiness = ()=> state.businesses.find(b=>b.id===state.selectedBusinessId) || state.businesses[0];
-    const emptyLine = ()=>({id:uid(),name:'',description:'',quantity:1,unitPrice:0});
-    const emptyDoc = (type='quote')=>({
-      id: uid(), type, number:'', status:type==='quote'?'brouillon':'en attente', clientName:'', contact:'', email:'', phone:'', project:'', issueDate:today(), expiryDate:type==='quote'?plusDays(14):'', lines:[emptyLine()], discountType:'percent', discountValue:0, tpsRate:5, tvqRate:9.975, notes:selectedBusiness().defaultNotes || '', createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(), businessId:selectedBusiness().id,
-    });
-    const totals = (doc)=>{
-      const subTotal = (doc.lines||[]).reduce((sum,l)=> sum + clamp(l.quantity,0)*clamp(l.unitPrice,0), 0);
-      const rawDiscount = clamp(doc.discountValue, 0);
-      const discount = doc.discountType==='percent' ? subTotal*(Math.min(rawDiscount,100)/100) : Math.min(rawDiscount, subTotal);
-      const taxableBase = Math.max(0, subTotal - discount);
-      const tps = taxableBase*(clamp(doc.tpsRate,0)/100);
-      const tvq = taxableBase*(clamp(doc.tvqRate,0)/100);
-      return {subTotal, discount, taxableBase, tps, tvq, total:taxableBase+tps+tvq};
-    };
-    const statusBadge = (status)=>{
-      const cls = status==='payé'||status==='accepté' ? 'success' : status==='en attente' ? 'warn' : status==='refusé'||status==='annulé' ? 'danger' : '';
-      return `<span class="badge ${cls}">${status}</span>`;
-    };
-    function saveState(){
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ theme: state.theme, selectedBusinessId: state.selectedBusinessId, businesses: state.businesses, clients: state.clients, servicesCatalog: state.servicesCatalog, documents: state.documents }));
+
+    function showToast(msg, kind = "success", undoCb = null) {
+      const toast = document.createElement("div");
+      toast.className = `toast ${kind}`;
+      const dot = document.createElement("span"); dot.className = "toast-dot";
+      const text = document.createElement("span"); text.className = "toast-msg"; text.textContent = msg;
+      toast.appendChild(dot); toast.appendChild(text);
+      if (undoCb) {
+        const btn = document.createElement("button"); btn.className = "toast-undo"; btn.textContent = "Annuler";
+        btn.addEventListener("click", () => { undoCb(); toast.remove(); });
+        toast.appendChild(btn);
+      }
+      els.toastWrap.appendChild(toast);
+      setTimeout(() => toast.remove(), undoCb ? 4200 : 3000);
     }
-    function loadState(){
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw) return;
-      try{
-        const data = JSON.parse(raw);
-        state.theme = 'dark';
-        if(data.selectedBusinessId) state.selectedBusinessId = data.selectedBusinessId;
-        if(Array.isArray(data.businesses) && data.businesses.length) state.businesses = data.businesses;
-        if(Array.isArray(data.clients)) state.clients = data.clients;
-        if(Array.isArray(data.servicesCatalog)) state.servicesCatalog = data.servicesCatalog;
-        if(Array.isArray(data.documents)) state.documents = data.documents;
-      }catch(e){}
+
+    function persist() { localStorage.setItem(STORAGE_KEY, JSON.stringify(app.state)); }
+    function getActiveProject() { return app.state.projects.find(p => p.id === app.state.activeSession?.projectId) || null; }
+    function getProjectById(id) { return app.state.projects.find(p => p.id === id) || null; }
+    function getCurrentWeek() {
+      const start = startOfWeek(new Date()).getTime();
+      const days = Array.from({length:7}, (_,i) => { const d = new Date(start); d.setDate(d.getDate()+i); return d; });
+      const daily = {}, byProject = {};
+      days.forEach(d => { daily[dateKey(d)] = {}; });
+      const sessions = [...app.state.sessions];
+      if (app.state.activeSession) {
+        sessions.push({ id:"live", projectId:app.state.activeSession.projectId, startAt:app.state.activeSession.startedAt, endAt: new Date(app.now).toISOString() });
+      }
+      sessions.forEach(s => {
+        const ss = new Date(s.startAt).getTime(), se = new Date(s.endAt).getTime();
+        days.forEach(day => {
+          const ds = new Date(day); ds.setHours(0,0,0,0);
+          const de = new Date(day); de.setHours(23,59,59,999);
+          const dur = overlap(ss, se, ds.getTime(), de.getTime());
+          if (dur > 0) {
+            const dk = dateKey(day);
+            daily[dk][s.projectId] = (daily[dk][s.projectId] || 0) + dur;
+            byProject[s.projectId] = (byProject[s.projectId] || 0) + dur;
+          }
+        });
+      });
+      const total = Object.values(byProject).reduce((a,b) => a+b, 0);
+      return { days, daily, byProject, total };
     }
-    function applyTheme(){ state.theme = 'dark'; document.body.classList.add('dark'); }
-    function setViewportUnit(){
-      const vh = window.visualViewport ? window.visualViewport.height * 0.01 : window.innerHeight * 0.01;
-      document.documentElement.style.setProperty('--app-vh', `${vh}px`);
+    function filteredProjects() {
+      const q = app.search.trim().toLowerCase();
+      const list = [...app.state.projects].sort((a,b) => a.code.localeCompare(b.code));
+      return q ? list.filter(p => `${p.code} ${p.name}`.toLowerCase().includes(q)) : list;
     }
-    function lockBodyScroll(){
-      if (document.body.classList.contains('modal-open')) return;
+    function isDesktop() { return window.innerWidth >= 980; }
+    function lockBodyScroll() {
+      app._scrollLockY = window.scrollY || window.pageYOffset || 0;
+      document.body.classList.add("modal-open");
+      document.body.style.top = `-${app._scrollLockY}px`;
+    }
+    function unlockBodyScroll() {
+      if (!document.body.classList.contains("modal-open")) return;
+      document.body.classList.remove("modal-open");
+      document.body.style.top = "";
+      window.scrollTo(0, app._scrollLockY || 0);
+    }
+    function withScrollPreserved(fn) {
+      const activeEl = document.activeElement;
+      const shouldPreserve = !document.body.classList.contains("modal-open") && (!activeEl || !["INPUT", "TEXTAREA", "SELECT"].includes(activeEl.tagName));
+      const scrollX = window.scrollX || window.pageXOffset || 0;
       const scrollY = window.scrollY || window.pageYOffset || 0;
-      document.body.dataset.scrollY = String(scrollY);
-      document.body.classList.add('modal-open');
-      document.body.style.top = `-${scrollY}px`;
+      fn();
+      if (shouldPreserve) requestAnimationFrame(() => window.scrollTo(scrollX, scrollY));
     }
-    function unlockBodyScroll(){
-      const scrollY = Number(document.body.dataset.scrollY || 0);
-      document.body.classList.remove('modal-open');
-      document.body.style.top = '';
-      delete document.body.dataset.scrollY;
-      window.scrollTo(0, scrollY);
+    function tickUpdate() {
+      app.now = Date.now();
+      const elapsed = app.state.activeSession ? Math.max(0, app.now - new Date(app.state.activeSession.startedAt).getTime()) : 0;
+      els.statChrono.textContent = formatDuration(elapsed);
+      els.timerValue.textContent = formatDuration(elapsed);
     }
-    function renderBusinessSelect(){ const sel = qs('#businessSelect'); sel.innerHTML = state.businesses.map(b=>`<option value="${b.id}">${b.name}</option>`).join(''); sel.value = state.selectedBusinessId; }
-    function renderTabs(){ qsa('.tab').forEach(btn=>btn.classList.toggle('active', btn.dataset.tab===state.activeTab)); qsa('.page').forEach(page=>page.classList.toggle('active', page.id===`page-${state.activeTab}`)); }
-    function dashboardData(){ const invoices = state.documents.filter(d=>d.type==='invoice'); const paid = invoices.filter(d=>d.status==='payé'); const pending = invoices.filter(d=>d.status==='en attente'); const totalRevenue = paid.reduce((sum,d)=> sum + totals(d).total, 0); const seven = new Date(); seven.setDate(seven.getDate()-7); const month = new Date(); month.setMonth(month.getMonth()-1); return { totalRevenue, paidCount: paid.length, pendingCount: pending.length, clientCount: state.clients.length, weekRevenue: paid.filter(d=>new Date(d.issueDate||d.createdAt)>=seven).reduce((s,d)=>s+totals(d).total,0), monthRevenue: paid.filter(d=>new Date(d.issueDate||d.createdAt)>=month).reduce((s,d)=>s+totals(d).total,0) }; }
-    function renderDashboard(){ const data = dashboardData(); qs('#statsGrid').innerHTML = [['Total gagné', money(data.totalRevenue)],['Factures payées', data.paidCount],['En attente', data.pendingCount],['Clients', data.clientCount]].map(([label,val])=>`<article class="glass card stat"><div class="label">${label}</div><div class="value">${val}</div></article>`).join(''); qs('#weekRevenue').textContent = money(data.weekRevenue); qs('#monthRevenue').textContent = money(data.monthRevenue); const recent = [...state.clients].sort((a,b)=>new Date(b.lastUsedAt||0)-new Date(a.lastUsedAt||0)).slice(0,8); qs('#recentClients').innerHTML = recent.length ? recent.map(c=>`<div class="client-row"><div style="font-weight:700">${escapeHtml(c.name)}</div><div class="meta">${escapeHtml(c.contact || c.email || 'Sans contact')}</div></div>`).join('') : `<div class="empty">Aucun client enregistré.</div>`; }
-    function filteredDocuments(){ const now = new Date(); return [...state.documents].sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt)).filter(doc=>{ const text = `${doc.number} ${doc.clientName} ${doc.project} ${doc.contact}`.toLowerCase(); const f = state.filters; if(f.search && !text.includes(f.search.toLowerCase())) return false; if(f.type!=='all' && doc.type!==f.type) return false; if(f.status!=='all' && doc.status!==f.status) return false; const d = new Date(doc.issueDate || doc.createdAt); if(f.date==='week'){ const x=new Date(now); x.setDate(x.getDate()-7); if(d<x) return false; } if(f.date==='month'){ const x=new Date(now); x.setMonth(x.getMonth()-1); if(d<x) return false; } return true; }); }
-    function renderDocuments(){ const list = qs('#documentsList'); const docs = filteredDocuments(); list.innerHTML = docs.length ? docs.map(doc=>{ const t = totals(doc); return `<article class="glass doc"><div><div class="badges"><span class="badge">${doc.type==='quote'?'Devis':'Facture'}</span>${statusBadge(doc.status)}</div><h3 class="doc-title">${escapeHtml(doc.number)}</h3><div class="meta">${escapeHtml(doc.clientName)} · ${escapeHtml(doc.project || 'Sans projet')}</div><div class="meta">${formatDate(doc.issueDate)} · Total ${money(t.total)}</div></div><div class="doc-actions"><button class="btn secondary" data-action="open" data-id="${doc.id}">Ouvrir</button><button class="btn" data-action="duplicate" data-id="${doc.id}">Dupliquer</button>${doc.type==='quote' ? `<button class="btn" data-action="convert" data-id="${doc.id}">Facturer</button>` : ''}<button class="btn" data-action="pdf" data-id="${doc.id}">PDF</button><button class="btn danger" data-action="delete" data-id="${doc.id}">Supprimer</button></div></article>`; }).join('') : `<article class="glass empty">Aucun document pour le moment.</article>`; }
-    function renderSettings(){ const b = selectedBusiness(); qs('#setName').value = b.name || ''; qs('#setSubtitle').value = b.subtitle || ''; qs('#setAddress').value = b.address || ''; qs('#setEmail').value = b.email || ''; qs('#setPhone').value = b.phone || ''; qs('#setQuotePrefix').value = b.quotePrefix || 'DEV'; qs('#setInvoicePrefix').value = b.invoicePrefix || 'FAC'; qs('#setTPS').value = b.tpsNumber || ''; qs('#setTVQ').value = b.tvqNumber || ''; qs('#setNotes').value = b.defaultNotes || ''; }
-    function createDocument(type){ const b = selectedBusiness(); const doc = emptyDoc(type); const next = type==='quote' ? b.nextQuoteNumber : b.nextInvoiceNumber; doc.number = `${type==='quote' ? sanitizePrefix(b.quotePrefix, 'DEV') : sanitizePrefix(b.invoicePrefix, 'FAC')}-${String(next).padStart(3,'0')}`; state.editor = doc; openEditor(); }
-    function openEditor(doc){ if(doc) state.editor = clone(doc); renderEditor(); qs('#editorModal').classList.add('open'); lockBodyScroll(); }
-    function closeEditor(){ qs('#editorModal').classList.remove('open'); unlockBodyScroll(); }
-    function editorStatuses(type){ return type==='quote' ? ['brouillon','accepté','refusé','annulé'] : ['en attente','payé','annulé']; }
-    function renderEditor(){ const doc = state.editor; if(!doc) return; qs('#editorTitle').textContent = doc.type==='quote' ? 'Édition du devis' : 'Édition de la facture'; qs('#editorSubtitle').textContent = `${doc.number} · ${doc.clientName || 'Sans client'}`; qs('#docClientName').value = doc.clientName || ''; qs('#docContact').value = doc.contact || ''; qs('#docEmail').value = doc.email || ''; qs('#docPhone').value = doc.phone || ''; qs('#docProject').value = doc.project || ''; qs('#docIssueDate').value = doc.issueDate || today(); qs('#docExpiryDate').value = doc.expiryDate || ''; qs('#expiryField').classList.toggle('hidden', doc.type !== 'quote'); const statuses = editorStatuses(doc.type); qs('#docStatus').innerHTML = statuses.map(s=>`<option value="${s}">${s}</option>`).join(''); qs('#docStatus').value = statuses.includes(doc.status) ? doc.status : statuses[0]; qs('#docDiscountType').value = doc.discountType || 'percent'; qs('#docDiscountValue').value = Number(doc.discountValue||0); qs('#docTpsRate').value = Number(doc.tpsRate||0); qs('#docTvqRate').value = Number(doc.tvqRate||0); qs('#docNotes').value = doc.notes || ''; qs('#clientsDatalist').innerHTML = state.clients.map(c=>`<option value="${escapeHtml(c.name)}"></option>`).join(''); qs('#convertBtn').classList.toggle('hidden', doc.type !== 'quote'); qs('#headConvertBtn').classList.toggle('hidden', doc.type !== 'quote'); renderLines(); renderSuggestions(); refreshSummary(); }
-    function renderSuggestions(){ const box = qs('#serviceSuggestions'); const items = [...state.servicesCatalog].sort((a,b)=>(b.usedCount||0)-(a.usedCount||0)).slice(0,8); box.innerHTML = items.length ? items.map(s=>`<button class="btn" data-add-service="${s.id}">${escapeHtml(s.name)} · ${money(s.lastPrice||0)}</button>`).join('') : ''; }
-    function renderLines(){ const doc = state.editor; const list = qs('#lineList'); const focused = document.activeElement; const activeLineId = focused?.dataset?.line || null; const activeKey = focused?.dataset?.key || null; const selectionStart = typeof focused?.selectionStart === 'number' ? focused.selectionStart : null; const selectionEnd = typeof focused?.selectionEnd === 'number' ? focused.selectionEnd : null; list.innerHTML = doc.lines.map((line,index)=>`<div class="line-item"><div class="line-grid"><div class="field"><label>Nom</label><input class="input" data-line="${line.id}" data-key="name" value="${escapeAttr(line.name)}"></div><div class="field"><label>Description</label><input class="input" data-line="${line.id}" data-key="description" value="${escapeAttr(line.description)}"></div><div class="field"><label>Qté</label><input class="input" type="number" min="0" step="1" data-line="${line.id}" data-key="quantity" value="${Number(line.quantity||0)}"></div><div class="field"><label>Prix unitaire</label><input class="input" type="number" min="0" step="0.01" data-line="${line.id}" data-key="unitPrice" value="${Number(line.unitPrice||0)}"></div><button class="btn danger" data-remove-line="${line.id}">Supprimer</button></div><div class="line-total">Ligne ${index+1} · ${money(Number(line.quantity||0)*Number(line.unitPrice||0))}</div></div>`).join(''); if(activeLineId && activeKey){ const nextInput = list.querySelector(`[data-line="${activeLineId}"][data-key="${activeKey}"]`); if(nextInput){ nextInput.focus(); if(selectionStart !== null && selectionEnd !== null && typeof nextInput.setSelectionRange === 'function'){ nextInput.setSelectionRange(selectionStart, selectionEnd); } } } }
-    function syncEditorFromFields(){ const doc = state.editor; doc.clientName = qs('#docClientName').value.trim(); doc.contact = qs('#docContact').value.trim(); doc.email = qs('#docEmail').value.trim(); doc.phone = qs('#docPhone').value.trim(); doc.project = qs('#docProject').value.trim(); doc.issueDate = qs('#docIssueDate').value || today(); doc.expiryDate = doc.type==='quote' ? (qs('#docExpiryDate').value || '') : ''; doc.status = qs('#docStatus').value; doc.discountType = qs('#docDiscountType').value === 'fixed' ? 'fixed' : 'percent'; doc.discountValue = clamp(qs('#docDiscountValue').value || 0, 0); doc.tpsRate = clamp(qs('#docTpsRate').value || 0, 0); doc.tvqRate = clamp(qs('#docTvqRate').value || 0, 0); doc.notes = qs('#docNotes').value; doc.lines = (doc.lines||[]).map(line => ({ ...line, quantity: clamp(line.quantity, 0), unitPrice: clamp(line.unitPrice, 0) })); const matched = state.clients.find(c=>c.name.toLowerCase()===doc.clientName.toLowerCase()); if(matched){ if(!doc.contact) doc.contact = matched.contact || ''; if(!doc.email) doc.email = matched.email || ''; if(!doc.phone) doc.phone = matched.phone || ''; } }
-    function refreshSummary(){ syncEditorFromFields(); const t = totals(state.editor); qs('#editorSubtitle').textContent = `${state.editor.number} · ${state.editor.clientName || 'Sans client'}`; qs('#sumSubTotal').textContent = money(t.subTotal); qs('#sumDiscount').textContent = '- ' + money(t.discount); qs('#sumTPS').textContent = money(t.tps); qs('#sumTVQ').textContent = money(t.tvq); qs('#sumTotal').textContent = money(t.total); }
-    function updateCountersOnCreate(type){ state.businesses = state.businesses.map(b=>{ if(b.id!==state.selectedBusinessId) return b; return type==='quote' ? {...b, nextQuoteNumber:(b.nextQuoteNumber||1)+1} : {...b, nextInvoiceNumber:(b.nextInvoiceNumber||1)+1}; }); }
-    function saveDocument(){
-      syncEditorFromFields();
-      const doc = state.editor;
-      doc.lines = validLines(doc.lines);
-      if(!doc.clientName.trim()){ alert('Ajoute au moins un client.'); return; }
-      if(!doc.lines.length){ alert('Ajoute au moins une ligne valide.'); return; }
-      doc.updatedAt = new Date().toISOString();
-      doc.businessId = state.selectedBusinessId;
-      const exists = state.documents.some(d=>d.id===doc.id);
-      if(exists) state.documents = state.documents.map(d=>d.id===doc.id ? clone(doc) : d);
-      else { state.documents.unshift(clone(doc)); updateCountersOnCreate(doc.type); }
-      const now = new Date().toISOString();
-      const existingClient = state.clients.find(c=>c.name.toLowerCase()===doc.clientName.toLowerCase());
-      if(existingClient){ Object.assign(existingClient, {contact:doc.contact,email:doc.email,phone:doc.phone,lastUsedAt:now}); }
-      else { state.clients.unshift({id:uid(),name:doc.clientName,contact:doc.contact,email:doc.email,phone:doc.phone,lastUsedAt:now}); }
-      const map = new Map(state.servicesCatalog.map(s=>[s.name.toLowerCase(),s]));
-      doc.lines.forEach(line=>{ if(!line.name.trim()) return; const key = line.name.toLowerCase(); const old = map.get(key); if(old) Object.assign(old,{description:line.description,lastPrice:Number(line.unitPrice||0),usedCount:(old.usedCount||0)+1}); else map.set(key,{id:uid(),name:line.name,description:line.description,lastPrice:Number(line.unitPrice||0),usedCount:1}); });
-      state.servicesCatalog = Array.from(map.values());
-      saveState(); renderAll(); closeEditor();
-    }
-    function duplicateDocument(id){ const original = state.documents.find(d=>d.id===id); if(!original) return; const b = selectedBusiness(); const type = original.type; const next = type==='quote' ? b.nextQuoteNumber : b.nextInvoiceNumber; state.editor = clone(original); state.editor.id = uid(); state.editor.number = `${type==='quote' ? b.quotePrefix : b.invoicePrefix}-${String(next).padStart(3,'0')}`; state.editor.status = type==='quote' ? 'brouillon' : 'en attente'; state.editor.issueDate = today(); state.editor.createdAt = new Date().toISOString(); state.editor.updatedAt = new Date().toISOString(); openEditor(); }
-    function convertDocument(id){ const source = typeof id === 'string' ? state.documents.find(d=>d.id===id) : state.editor; if(!source) return; const b = selectedBusiness(); const next = b.nextInvoiceNumber; state.editor = clone(source); state.editor.id = uid(); state.editor.type = 'invoice'; state.editor.number = `${b.invoicePrefix}-${String(next).padStart(3,'0')}`; state.editor.status = 'en attente'; state.editor.expiryDate = ''; state.editor.createdAt = new Date().toISOString(); state.editor.updatedAt = new Date().toISOString(); openEditor(); }
-    function deleteDocument(id){ if(!confirm('Supprimer ce document ?')) return; state.documents = state.documents.filter(d=>d.id!==id); saveState(); renderAll(); }
-    function exportPDF(doc){
-      if(!window.jspdf || !window.jspdf.jsPDF){
-        alert('La librairie PDF n\'est pas chargée.');
-        return;
+
+    function render() {
+      app.now = Date.now();
+      const active = getActiveProject();
+      const elapsed = app.state.activeSession ? Math.max(0, app.now - new Date(app.state.activeSession.startedAt).getTime()) : 0;
+      const week = getCurrentWeek();
+      const todayKey = dateKey(new Date());
+      const todayEntries = Object.entries(week.daily[todayKey] || {}).sort((a,b) => b[1]-a[1]);
+      const todayTotal = todayEntries.reduce((s,[,v]) => s+v, 0);
+      const weeklyProjects = Object.entries(week.byProject).sort((a,b) => b[1]-a[1]);
+      const allSessions = [...app.state.sessions].sort((a,b) => new Date(b.startAt) - new Date(a.startAt));
+      const pagedSessions = allSessions.slice(0, app.sessionsPage * SESSIONS_PER_PAGE);
+      const running = !!app.state.activeSession;
+
+      els.statActive.textContent = active ? active.code : "Aucun";
+      els.statActiveMeta.textContent = running ? "● En cours" : "Prêt";
+      els.statChrono.textContent = formatDuration(elapsed);
+      els.statChronoMeta.textContent = active?.name || "—";
+      els.statToday.textContent = formatDurationShort(todayTotal);
+      els.statTodayMeta.textContent = new Date().toLocaleDateString("fr-CA");
+      els.statWeek.textContent = formatDurationShort(week.total);
+      els.statWeekMeta.textContent = weekLabel();
+      els.statCardActive.classList.toggle("lit", running);
+      els.statCardChrono.classList.toggle("lit", running);
+
+      els.timerCard.classList.toggle("running", running);
+      els.timerEyebrow.textContent = running ? "En cours" : "Aucun projet actif";
+      els.timerProject.textContent = active ? active.code : "—";
+      els.timerSubtitle.textContent = active?.name || "Lance un projet depuis l'onglet Projets.";
+      els.timerValue.textContent = formatDuration(elapsed);
+      els.timerNoteRow.style.display = running ? "block" : "none";
+      if (active) {
+        els.timerGlow.style.background = `radial-gradient(circle, ${projectColorDim(active.code)} 0%, transparent 70%)`;
+        if (!els.timerNoteInput.dataset.userEditing) els.timerNoteInput.value = app.state.activeSession?.note || "";
+      }
+      els.pauseBtn.disabled = !running;
+      els.stopBtn.disabled = !running;
+
+      els.todayTotalLabel.textContent = formatDurationShort(todayTotal);
+      els.todayEntries.innerHTML = todayEntries.length === 0 ? '<div class="empty sm">Aucun temps enregistré aujourd\'hui.</div>' : todayEntries.map(([pid, dur]) => {
+        const p = getProjectById(pid); const pct = todayTotal ? Math.round(dur/todayTotal*100) : 0; const color = p ? projectColor(p.code) : "#6b7a8d";
+        return `<div class="summary-item"><div class="summary-row"><span class="summary-name"><span class="color-dot" style="background:${color}"></span>${escapeHtml(p?.code||"Supprimé")}</span><span class="summary-dur">${escapeHtml(formatDurationShort(dur))}</span></div>${p?.name ? `<div class="summary-meta">${escapeHtml(p.name)}</div>` : ""}<div class="progress"><span style="width:${pct}%;background:${color}"></span></div></div>`;
+      }).join("");
+
+      const projects = filteredProjects();
+      els.projectList.innerHTML = projects.length === 0 ? '<div class="empty"><span class="empty-icon">📁</span>Aucun projet trouvé.</div>' : projects.map(p => {
+        const wt = week.byProject[p.id] || 0; const isActive = app.state.activeSession?.projectId === p.id; const color = projectColor(p.code); const cnt = app.state.sessions.filter(s => s.projectId === p.id).length;
+        return `<article class="project-card"><div class="project-top"><div class="project-info"><h3><span class="project-dot" style="background:${color};box-shadow:0 0 7px ${color}60"></span>${escapeHtml(p.code)}</h3><div class="project-name">${escapeHtml(p.name || "Sans nom")}</div><div class="project-meta">${isActive ? '<span class="pill active">● Actif</span>' : ""}${p.archived ? '<span class="pill archived">Archivé</span>' : ""}${wt > 0 ? `<span class="pill week">${escapeHtml(formatDurationShort(wt))} cette sem.</span>` : ""}<span class="pill">${cnt} session${cnt!==1?"s":""}</span></div></div><div class="icon-actions"><button class="icon-btn" data-action="edit-project" data-id="${p.id}" aria-label="Modifier" type="button">✎</button><button class="icon-btn danger" data-action="delete-project" data-id="${p.id}" aria-label="Supprimer" type="button">🗑</button></div></div><div class="project-actions"><button class="btn btn-primary" data-action="start-project" data-id="${p.id}" ${p.archived?"disabled":""} type="button">${isActive?"⟳ Relancer":"▶ Démarrer"}</button><button class="btn btn-secondary" data-action="quick-15" data-id="${p.id}" type="button">+15 min</button><button class="btn btn-secondary" data-action="quick-custom" data-id="${p.id}" type="button">Manuel</button></div></article>`;
+      }).join("");
+
+      els.weekLabel.textContent = weekLabel();
+      els.weekTotalLabel.textContent = formatDurationShort(week.total);
+      els.weekProjectTotalLabel.textContent = formatDurationShort(week.total);
+      els.weekDays.innerHTML = week.days.map(day => {
+        const dk = dateKey(day); const entries = Object.entries(week.daily[dk] || {}).sort((a,b) => b[1]-a[1]); const total = entries.reduce((a,[,v]) => a+v, 0); const isToday = dk === todayKey;
+        return `<details class="day-accordion" ${isToday?"open":""}><summary><strong style="${isToday?"color:var(--accent)":""}">${escapeHtml(day.toLocaleDateString("fr-CA",{weekday:"long",day:"numeric",month:"short"}))}${isToday?" · Aujourd'hui":""}</strong><div style="display:flex;align-items:center;gap:12px"><span class="day-total">${escapeHtml(formatDurationShort(total))}</span><span class="chevron">›</span></div></summary><div class="accordion-content">${entries.length === 0 ? '<div class="empty sm" style="margin-top:8px">Aucun temps</div>' : entries.map(([pid, dur]) => { const p = getProjectById(pid); const color = p ? projectColor(p.code) : "#6b7a8d"; return `<div class="day-row"><span class="day-name"><span class="color-dot" style="background:${color}"></span>${escapeHtml(p?.code||"Supprimé")}</span><span class="day-dur">${escapeHtml(formatDurationShort(dur))}</span></div>`; }).join("")}</div></details>`;
+      }).join("");
+
+      els.weekProjects.innerHTML = weeklyProjects.length === 0 ? '<div class="empty"><span class="empty-icon">📊</span>Aucune donnée cette semaine.</div>' : weeklyProjects.map(([pid, dur]) => {
+        const p = getProjectById(pid); const pct = week.total ? Math.round(dur/week.total*100) : 0; const color = p ? projectColor(p.code) : "#6b7a8d";
+        return `<div class="summary-item"><div class="summary-row"><span class="summary-name"><span class="color-dot" style="background:${color}"></span>${escapeHtml(p?.code||"Supprimé")}</span><span class="summary-dur">${escapeHtml(formatDurationShort(dur))} · ${pct}%</span></div>${p?.name ? `<div class="summary-meta">${escapeHtml(p.name)}</div>` : ""}<div class="progress"><span style="width:${pct}%;background:${color}"></span></div></div>`;
+      }).join("");
+
+      els.sessionList.innerHTML = allSessions.length === 0 ? '<div class="empty"><span class="empty-icon">🕐</span>Aucune session enregistrée.</div>' : pagedSessions.map(s => {
+        const p = getProjectById(s.projectId); const dur = new Date(s.endAt) - new Date(s.startAt); const color = p ? projectColor(p.code) : "#6b7a8d";
+        return `<article class="session-card"><div class="session-main"><h3><span class="color-dot" style="background:${color}"></span>${escapeHtml(p?.code||"Supprimé")}</h3><div class="session-meta">${escapeHtml(new Date(s.startAt).toLocaleString("fr-CA"))} → ${escapeHtml(new Date(s.endAt).toLocaleString("fr-CA"))}</div><div class="session-duration">${escapeHtml(formatDurationShort(dur))}</div>${s.note ? `<div class="session-note">${escapeHtml(s.note)}</div>` : ""}</div><div class="icon-actions"><button class="icon-btn" data-action="edit-session" data-id="${s.id}" aria-label="Modifier" type="button">✎</button><button class="icon-btn danger" data-action="delete-session" data-id="${s.id}" aria-label="Supprimer" type="button">🗑</button></div></article>`;
+      }).join("");
+
+      if (allSessions.length > app.sessionsPage * SESSIONS_PER_PAGE) {
+        const rem = allSessions.length - app.sessionsPage * SESSIONS_PER_PAGE;
+        els.sessionsFooter.innerHTML = `<button class="btn btn-ghost" id="loadMoreBtn">Charger ${rem} de plus</button>`;
+        $("loadMoreBtn")?.addEventListener("click", () => { app.sessionsPage++; withScrollPreserved(render); });
+      } else {
+        els.sessionsFooter.innerHTML = "";
       }
 
-      const safeDoc = { ...doc, lines: validLines(doc.lines) };
-      if (!safeDoc.lines.length) { alert('Ajoute au moins une ligne valide avant l'export PDF.'); return; }
-      const b = state.businesses.find(x=>x.id===safeDoc.businessId) || selectedBusiness();
-      const pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
-      const t = totals(safeDoc);
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
-      const margin = 16;
-      const contentW = pageW - margin * 2;
-      const isQuote = safeDoc.type === 'quote';
-
-      const C = {
-        ink: [17,24,39],
-        text: [55,65,81],
-        muted: [107,114,128],
-        line: [229,231,235],
-        soft: [249,250,251],
-        white: [255,255,255],
-        accent: [245,158,11],
-        accentDark: [180,83,9],
-      };
-
-      const fmtMoney = (v) => money(v || 0);
-      const setFont = (size=10, bold=false, color=C.text) => {
-        pdf.setFont('helvetica', bold ? 'bold' : 'normal');
-        pdf.setFontSize(size);
-        pdf.setTextColor(...color);
-      };
-      const txt = (value, x, y, opts={}) => {
-        setFont(opts.size || 10, !!opts.bold, opts.color || C.text);
-        const content = Array.isArray(value) ? value : String(value ?? '');
-        if(opts.align) pdf.text(content, x, y, { align: opts.align });
-        else pdf.text(content, x, y);
-      };
-      const line = (x1, y1, x2, y2, color=C.line, width=0.35) => {
-        pdf.setDrawColor(...color);
-        pdf.setLineWidth(width);
-        pdf.line(x1, y1, x2, y2);
-      };
-      const box = (x, y, w, h, fill=C.white, stroke=C.line, r=0) => {
-        pdf.setFillColor(...fill);
-        pdf.setDrawColor(...stroke);
-        if(r > 0) pdf.roundedRect(x, y, w, h, r, r, 'FD');
-        else pdf.rect(x, y, w, h, 'FD');
-      };
-      const wrap = (value, width, maxLines=null) => {
-        const arr = pdf.splitTextToSize(String(value || ''), width);
-        if(maxLines && arr.length > maxLines){
-          const out = arr.slice(0, maxLines);
-          let last = out[maxLines - 1] || '';
-          last = last.length > 1 ? `${last.slice(0, -1)}…` : '…';
-          out[maxLines - 1] = last;
-          return out;
-        }
-        return arr;
-      };
-      const rowText = (label, value, x1, x2, y, total=false) => {
-        txt(label, x1, y, { size: total ? 12 : 10, bold: total, color: total ? C.ink : C.muted });
-        txt(value, x2, y, { size: total ? 12 : 10, bold: total, color: total ? C.accentDark : C.ink, align: 'right' });
-      };
-      const drawPartyCard = (title, strongLine, lines, x, y, w) => {
-        const contentLines = lines.filter(Boolean).flatMap(v => wrap(v, w - 10, 2));
-        const maxExtra = 4;
-        const trimmed = contentLines.slice(0, maxExtra);
-        const h = Math.max(34, 18 + trimmed.length * 5.2);
-        box(x, y, w, h, C.soft, C.line, 0);
-        txt(title, x + 5, y + 7, { size: 8, bold: true, color: C.muted });
-        txt(strongLine || '—', x + 5, y + 14, { size: 11, bold: true, color: C.ink });
-        trimmed.forEach((v, i) => txt(v, x + 5, y + 20 + i * 5.2, { size: 9, color: C.text }));
-        return h;
-      };
-
-      pdf.setFillColor(...C.white);
-      pdf.rect(0, 0, pageW, pageH, 'F');
-
-      box(margin, margin, contentW, 30, C.ink, C.ink, 0);
-      box(margin + 6, margin + 6, 16, 18, C.white, C.white, 3);
-      pdf.setFillColor(...C.accent);
-      pdf.circle(margin + 14, margin + 15, 4.8, 'F');
-      txt(b.name || 'Juuicyy Prod', margin + 28, margin + 12, { size: 18, bold: true, color: C.white });
-      txt(b.subtitle || 'Devis et factures intelligents', margin + 28, margin + 20, { size: 9, color: [209,213,219] });
-      txt(isQuote ? 'DEVIS' : 'FACTURE', pageW - margin - 6, margin + 12, { size: 18, bold: true, color: C.white, align: 'right' });
-      txt(safeDoc.number, pageW - margin - 6, margin + 20, { size: 10, color: [229,231,235], align: 'right' });
-
-      let y = margin + 38;
-
-      const leftW = 92;
-      const rightW = contentW - leftW - 8;
-      const issuerLines = [b.address, b.email, b.phone, b.tpsNumber ? `TPS: ${b.tpsNumber}` : '', b.tvqNumber ? `TVQ: ${b.tvqNumber}` : ''];
-      const clientLines = [safeDoc.contact, safeDoc.email, safeDoc.phone, safeDoc.project ? `Projet: ${safeDoc.project}` : ''];
-      const leftH = drawPartyCard('ÉMETTEUR', b.name || 'Juuicyy Prod', issuerLines, margin, y, leftW);
-      const rightH = drawPartyCard('CLIENT', safeDoc.clientName || '—', clientLines, margin + leftW + 8, y, rightW);
-      const partyH = Math.max(leftH, rightH);
-      if(leftH !== partyH) box(margin, y, leftW, partyH, C.soft, C.line, 0), drawPartyCard('ÉMETTEUR', b.name || 'Juuicyy Prod', issuerLines, margin, y, leftW);
-      if(rightH !== partyH) box(margin + leftW + 8, y, rightW, partyH, C.soft, C.line, 0), drawPartyCard('CLIENT', safeDoc.clientName || '—', clientLines, margin + leftW + 8, y, rightW);
-
-      y += partyH + 8;
-      box(margin, y, contentW, 14, [255,251,235], [253,230,138], 0);
-      const metaW = contentW / 3;
-      [
-        ['Date', formatDate(safeDoc.issueDate)],
-        [isQuote ? 'Expiration' : 'Statut', isQuote ? formatDate(safeDoc.expiryDate) : (safeDoc.status || '—')],
-        [isQuote ? 'Statut' : 'Paiement', isQuote ? (safeDoc.status || '—') : (safeDoc.status === 'payé' ? 'Reçu' : 'En attente')],
-      ].forEach((item, i) => {
-        const mx = margin + i * metaW + 5;
-        txt(item[0], mx, y + 5.2, { size: 7.8, bold: true, color: C.accentDark });
-        txt(item[1] || '—', mx, y + 10.6, { size: 9.4, color: C.ink });
-      });
-
-      y += 22;
-      const serviceW = 106;
-      const qtyW = 18;
-      const priceW = 25;
-      const totalW = 27;
-      const tableX = margin;
-      const serviceX = tableX + 4;
-      const qtyX = tableX + serviceW;
-      const priceX = qtyX + qtyW;
-      const totalX = priceX + priceW;
-      const renderTableHead = () => {
-        box(tableX, y, contentW, 10, C.ink, C.ink, 0);
-        txt('Service', serviceX, y + 6.4, { size: 9, bold: true, color: C.white });
-        txt('Qté', qtyX + qtyW - 3, y + 6.4, { size: 9, bold: true, color: C.white, align: 'right' });
-        txt('Prix', priceX + priceW - 3, y + 6.4, { size: 9, bold: true, color: C.white, align: 'right' });
-        txt('Total', totalX + totalW - 3, y + 6.4, { size: 9, bold: true, color: C.white, align: 'right' });
-        y += 12;
-      };
-      renderTableHead();
-
-      const newPage = () => {
-        pdf.addPage();
-        pdf.setFillColor(...C.white);
-        pdf.rect(0, 0, pageW, pageH, 'F');
-        y = margin;
-        renderTableHead();
-      };
-
-      safeDoc.lines.forEach((item, idx) => {
-        const title = item.name || '—';
-        const desc = item.description ? wrap(item.description, serviceW - 8, 4) : [];
-        const rowH = 10 + (desc.length ? desc.length * 4.2 : 0);
-        if(y + rowH > 236) newPage();
-        box(tableX, y, contentW, rowH, idx % 2 === 0 ? C.white : C.soft, C.line, 0);
-        txt(title, serviceX, y + 5.8, { size: 10, bold: true, color: C.ink });
-        if(desc.length) txt(desc, serviceX, y + 10.2, { size: 8.3, color: C.muted });
-        txt(String(item.quantity || 0), qtyX + qtyW - 3, y + 7.2, { size: 9.4, color: C.ink, align: 'right' });
-        txt(fmtMoney(item.unitPrice || 0), priceX + priceW - 3, y + 7.2, { size: 9.4, color: C.ink, align: 'right' });
-        txt(fmtMoney(Number(item.quantity || 0) * Number(item.unitPrice || 0)), totalX + totalW - 3, y + 7.2, { size: 9.4, bold: true, color: C.ink, align: 'right' });
-        y += rowH + 3;
-      });
-
-      const notesText = safeDoc.notes && safeDoc.notes.trim() ? safeDoc.notes.trim() : 'Paiement dû selon les conditions convenues.';
-      const notesLines = wrap(notesText, 86, 5);
-      const notesH = Math.max(26, 12 + notesLines.length * 4.5);
-      const summaryRows = 5;
-      const summaryH = 12 + summaryRows * 7;
-      const blockY = Math.max(y + 6, 226 - Math.max(notesH, summaryH));
-      const blockH = Math.max(notesH, summaryH);
-      const notesBlockW = 94;
-      const summaryBlockX = margin + notesBlockW + 8;
-      const summaryBlockW = contentW - notesBlockW - 8;
-
-      box(margin, blockY, notesBlockW, blockH, C.soft, C.line, 0);
-      txt('NOTES', margin + 5, blockY + 7, { size: 8, bold: true, color: C.muted });
-      txt(notesLines, margin + 5, blockY + 14, { size: 8.6, color: C.text });
-
-      box(summaryBlockX, blockY, summaryBlockW, blockH, C.soft, C.line, 0);
-      const sx1 = summaryBlockX + 5;
-      const sx2 = summaryBlockX + summaryBlockW - 5;
-      rowText('Sous-total', fmtMoney(t.subTotal), sx1, sx2, blockY + 7);
-      rowText('Remise', fmtMoney(t.discount), sx1, sx2, blockY + 14);
-      rowText('TPS', fmtMoney(t.tps), sx1, sx2, blockY + 21);
-      rowText('TVQ', fmtMoney(t.tvq), sx1, sx2, blockY + 28);
-      line(sx1, blockY + 32.5, sx2, blockY + 32.5, C.line, 0.4);
-      rowText('Total', fmtMoney(t.total), sx1, sx2, blockY + 41, true);
-
-      line(margin, pageH - 14, pageW - margin, pageH - 14, C.line, 0.4);
-      txt('Merci pour votre confiance.', margin, pageH - 8, { size: 8.3, color: C.muted });
-      txt('© Juuicyy Prod — Tous droits réservés', pageW - margin, pageH - 8, { size: 8.3, color: C.muted, align: 'right' });
-      pdf.save(`${safeDoc.number}.pdf`);
+      document.querySelectorAll(".mobile-tabs button").forEach(btn => btn.classList.toggle("active", btn.dataset.tab === app.tab));
+      els.panels.forEach(p => p.classList.add("hidden"));
+      if (isDesktop()) els.panels.forEach(p => p.classList.remove("hidden"));
+      else $(`panel-${app.tab}`)?.classList.remove("hidden");
     }
-    function escapeHtml(str=''){ return String(str).replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
-    function escapeAttr(str=''){ return escapeHtml(str).replace(/`/g,'&#96;'); }
-    function renderAll(){ applyTheme(); renderBusinessSelect(); renderTabs(); renderDashboard(); renderDocuments(); renderSettings(); saveState(); }
-    function cloneCurrentEditor(){ if(!state.editor) return; const original = clone(state.editor); const b = selectedBusiness(); const type = original.type; const next = type==='quote' ? b.nextQuoteNumber : b.nextInvoiceNumber; original.id = uid(); original.number = `${type==='quote'?b.quotePrefix:b.invoicePrefix}-${String(next).padStart(3,'0')}`; original.status = type==='quote' ? 'brouillon' : 'en attente'; original.issueDate = today(); original.createdAt = new Date().toISOString(); original.updatedAt = new Date().toISOString(); state.editor = original; renderEditor(); }
-    function bindEvents(){ qsa('.tab').forEach(btn=>btn.addEventListener('click', ()=>{ state.activeTab = btn.dataset.tab; renderTabs(); })); qs('#businessSelect').addEventListener('change', e=>{ state.selectedBusinessId = e.target.value; renderSettings(); saveState(); }); qs('#newQuoteBtn').addEventListener('click', ()=> createDocument('quote')); qs('#newInvoiceBtn').addEventListener('click', ()=> createDocument('invoice')); qs('#searchInput').addEventListener('input', e=>{ state.filters.search = e.target.value; renderDocuments(); }); qs('#typeFilter').addEventListener('change', e=>{ state.filters.type = e.target.value; renderDocuments(); }); qs('#statusFilter').addEventListener('change', e=>{ state.filters.status = e.target.value; renderDocuments(); }); qs('#dateFilter').addEventListener('change', e=>{ state.filters.date = e.target.value; renderDocuments(); }); qs('#documentsList').addEventListener('click', e=>{ const btn = e.target.closest('[data-action]'); if(!btn) return; const { action, id } = btn.dataset; if(action==='open') openEditor(state.documents.find(d=>d.id===id)); if(action==='duplicate') duplicateDocument(id); if(action==='convert') convertDocument(id); if(action==='pdf') { const d=state.documents.find(x=>x.id===id); if(d) exportPDF(d); } if(action==='delete') deleteDocument(id); }); ['setName','setSubtitle','setAddress','setEmail','setPhone','setQuotePrefix','setInvoicePrefix','setTPS','setTVQ','setNotes'].forEach(id=>{ qs('#'+id).addEventListener('input', ()=>{ const b = selectedBusiness(); b.name = qs('#setName').value; b.subtitle = qs('#setSubtitle').value; b.address = qs('#setAddress').value; b.email = qs('#setEmail').value; b.phone = qs('#setPhone').value; b.quotePrefix = sanitizePrefix(qs('#setQuotePrefix').value, 'DEV'); b.invoicePrefix = sanitizePrefix(qs('#setInvoicePrefix').value, 'FAC'); b.tpsNumber = qs('#setTPS').value; b.tvqNumber = qs('#setTVQ').value; b.defaultNotes = qs('#setNotes').value; renderBusinessSelect(); saveState(); }); }); qs('#closeEditorBtn').addEventListener('click', closeEditor); qs('#editorModal').addEventListener('click', e=>{ if(e.target.id==='editorModal') closeEditor(); }); qs('#addLineBtn').addEventListener('click', ()=>{ state.editor.lines.push(emptyLine()); renderLines(); refreshSummary(); }); qs('#saveDocBtn').addEventListener('click', saveDocument); qs('#headSaveBtn').addEventListener('click', saveDocument); qs('#convertBtn').addEventListener('click', ()=> convertDocument()); qs('#headConvertBtn').addEventListener('click', ()=> convertDocument()); qs('#duplicateBtn').addEventListener('click', cloneCurrentEditor); qs('#headDuplicateBtn').addEventListener('click', cloneCurrentEditor); qs('#exportPdfBtn').addEventListener('click', ()=>{ if(state.editor){ syncEditorFromFields(); exportPDF(state.editor); } }); ['docClientName','docContact','docEmail','docPhone','docProject','docIssueDate','docExpiryDate','docStatus','docDiscountType','docDiscountValue','docTpsRate','docTvqRate','docNotes'].forEach(id=>{ qs('#'+id).addEventListener('input', refreshSummary); qs('#'+id).addEventListener('change', refreshSummary); }); qs('#docClientName').addEventListener('change', ()=>{ const value = qs('#docClientName').value.trim().toLowerCase(); const matched = state.clients.find(c=>c.name.toLowerCase()===value); if(matched){ if(!qs('#docContact').value) qs('#docContact').value = matched.contact || ''; if(!qs('#docEmail').value) qs('#docEmail').value = matched.email || ''; if(!qs('#docPhone').value) qs('#docPhone').value = matched.phone || ''; refreshSummary(); } }); qs('#lineList').addEventListener('input', e=>{ const input = e.target.closest('[data-line]'); if(!input) return; const line = state.editor.lines.find(l=>l.id===input.dataset.line); if(!line) return; const key = input.dataset.key; line[key] = (key==='quantity' || key==='unitPrice') ? Number(input.value||0) : input.value; const totalEl = input.closest('.line-item')?.querySelector('.line-total'); if(totalEl){ totalEl.textContent = `Ligne ${state.editor.lines.findIndex(l=>l.id===line.id)+1} · ${money(Number(line.quantity||0)*Number(line.unitPrice||0))}`; } refreshSummary(); }); qs('#lineList').addEventListener('change', e=>{ const input = e.target.closest('[data-line]'); if(!input) return; renderLines(); }); qs('#lineList').addEventListener('click', e=>{ const btn = e.target.closest('[data-remove-line]'); if(!btn) return; const id = btn.dataset.removeLine; state.editor.lines = state.editor.lines.filter(l=>l.id!==id); if(!state.editor.lines.length) state.editor.lines = [emptyLine()]; renderLines(); refreshSummary(); }); qs('#serviceSuggestions').addEventListener('click', e=>{ const btn = e.target.closest('[data-add-service]'); if(!btn) return; const service = state.servicesCatalog.find(s=>s.id===btn.dataset.addService); if(!service) return; state.editor.lines.push({id:uid(),name:service.name,description:service.description||'',quantity:1,unitPrice:Number(service.lastPrice||0)}); renderLines(); refreshSummary(); }); document.addEventListener('keydown', e=>{ if(e.key==='Escape' && qs('#editorModal').classList.contains('open')) closeEditor(); }); }
-    loadState();
-    bindEvents();
-    setViewportUnit();
-    window.addEventListener('resize', setViewportUnit, { passive:true });
-    window.visualViewport?.addEventListener('resize', setViewportUnit, { passive:true });
-    renderAll();
+
+    function openModal(id) { $(id)?.classList.add("open"); lockBodyScroll(); }
+    function closeModal(id) { $(id)?.classList.remove("open"); if (!document.querySelector(".modal-backdrop.open")) unlockBodyScroll(); }
+    function openProjectModal(project = null) {
+      app.editingProjectId = project?.id || null;
+      els.projectModalTitle.textContent = project ? "Modifier le projet" : "Créer un projet";
+      els.projectCodeInput.value = project?.code || "";
+      els.projectNameInput.value = project?.name || "";
+      if (project) {
+        els.archiveToggleRow.classList.remove("hidden");
+        els.projectArchivedInput.checked = !!project.archived;
+      } else {
+        els.archiveToggleRow.classList.add("hidden");
+        els.projectArchivedInput.checked = false;
+      }
+      openModal("projectModal");
+      els.projectCodeInput.focus();
+    }
+    function saveProject() {
+      const code = els.projectCodeInput.value.trim().toUpperCase();
+      const name = els.projectNameInput.value.trim();
+      if (!code) { showToast("Le code projet est obligatoire.", "warn"); els.projectCodeInput.focus(); return; }
+      if (app.state.projects.find(p => p.code === code && p.id !== app.editingProjectId)) { showToast("Ce code existe déjà.", "warn"); els.projectCodeInput.focus(); return; }
+      if (app.editingProjectId) {
+        const archived = els.projectArchivedInput.checked;
+        app.state.projects = app.state.projects.map(p => p.id === app.editingProjectId ? { ...p, code, name, archived } : p);
+        showToast("Projet modifié ✓");
+      } else {
+        app.state.projects.push({ id: uid(), code, name, archived: false, createdAt: new Date().toISOString() });
+        showToast(`${code} créé ✓`);
+      }
+      persist(); closeModal("projectModal"); withScrollPreserved(render);
+    }
+    function commitActiveSession(endIso) {
+      if (!app.state.activeSession) return false;
+      const startMs = new Date(app.state.activeSession.startedAt).getTime();
+      const endMs = new Date(endIso).getTime();
+      if (!isFinite(startMs) || !isFinite(endMs) || endMs <= startMs) { app.state.activeSession = null; return false; }
+      app.state.sessions.push({ id: uid(), projectId: app.state.activeSession.projectId, startAt: new Date(startMs).toISOString(), endAt: new Date(endMs).toISOString(), note: app.state.activeSession.note || "" });
+      app.state.activeSession = null;
+      return true;
+    }
+    function deleteProject(projectId) {
+      const project = getProjectById(projectId); if (!project) return;
+      if (app.state.activeSession?.projectId === projectId) commitActiveSession(new Date().toISOString());
+      const linked = app.state.sessions.some(s => s.projectId === projectId);
+      if (linked) {
+        app.state.projects = app.state.projects.map(p => p.id === projectId ? { ...p, archived: true } : p);
+        showToast(`${project.code} archivé (sessions existantes).`, "warn");
+        persist(); withScrollPreserved(render);
+      } else {
+        app.state.projects = app.state.projects.filter(p => p.id !== projectId);
+        persist(); withScrollPreserved(render);
+        showToast(`${project.code} supprimé.`, "success", () => { app.state.projects.push(project); persist(); withScrollPreserved(render); });
+      }
+    }
+    function startTimer(projectId) {
+      const project = getProjectById(projectId);
+      if (!project || project.archived) return;
+      if (app.state.activeSession?.projectId === projectId) { showToast("Ce projet est déjà actif.", "warn"); return; }
+      const nowIso = new Date().toISOString();
+      if (app.state.activeSession) commitActiveSession(nowIso);
+      app.state.activeSession = { projectId, startedAt: nowIso, note: "" };
+      delete els.timerNoteInput.dataset.userEditing;
+      persist(); withScrollPreserved(render);
+      showToast(`▶ ${project.code} — chrono lancé`);
+    }
+    function pauseTimer() {
+      if (!app.state.activeSession) return;
+      const p = getActiveProject();
+      const ok = commitActiveSession(new Date().toISOString());
+      persist(); withScrollPreserved(render);
+      if (ok && p) showToast(`⏸ Pause — ${p.code}`);
+    }
+    function stopTimer() {
+      if (!app.state.activeSession) return;
+      const p = getActiveProject();
+      const ok = commitActiveSession(new Date().toISOString());
+      persist(); withScrollPreserved(render);
+      if (ok && p) showToast(`⏹ Arrêté — ${p.code}`);
+    }
+    function openManualModal(projectId) {
+      const p = getProjectById(projectId); if (!p) return;
+      app.manualProjectId = projectId;
+      els.manualProjectLabel.textContent = p.name ? `${p.code} — ${p.name}` : p.code;
+      els.manualProjectLabel.style.color = projectColor(p.code);
+      els.manualMinutesInput.value = ""; els.manualNoteInput.value = "";
+      openModal("manualModal"); els.manualMinutesInput.focus();
+    }
+    function saveManualEntry() {
+      const p = getProjectById(app.manualProjectId);
+      if (!p) { showToast("Projet introuvable.", "error"); return; }
+      if (p.archived) { showToast("Impossible d'ajouter du temps à un projet archivé.", "warn"); return; }
+      const minutes = Number(els.manualMinutesInput.value);
+      if (!isFinite(minutes) || minutes <= 0) { showToast("Entre un nombre de minutes valide.", "warn"); els.manualMinutesInput.focus(); return; }
+      const safe = Math.round(minutes);
+      const end = new Date(), start = new Date(end - safe * 60000);
+      app.state.sessions.push({ id: uid(), projectId: app.manualProjectId, startAt: start.toISOString(), endAt: end.toISOString(), note: els.manualNoteInput.value.trim() || `Ajout manuel — ${safe} min` });
+      persist(); closeModal("manualModal"); withScrollPreserved(render);
+      showToast(`+ ${safe} min → ${p.code}`);
+    }
+    function openSessionModal(session) {
+      app.editingSessionId = session.id;
+      els.sessionProjectInput.innerHTML = app.state.projects.map(p => `<option value="${p.id}">${escapeHtml(p.name ? `${p.code} — ${p.name}` : p.code)}</option>`).join("");
+      els.sessionProjectInput.value = session.projectId;
+      els.sessionStartInput.value = toLocalDT(session.startAt);
+      els.sessionEndInput.value = toLocalDT(session.endAt);
+      els.sessionNoteInput.value = session.note || "";
+      openModal("sessionModal"); els.sessionStartInput.focus();
+    }
+    function saveSession() {
+      if (!app.editingSessionId) return;
+      const startRaw = els.sessionStartInput.value, endRaw = els.sessionEndInput.value;
+      if (!startRaw || !endRaw) { showToast("Début et fin sont obligatoires.", "warn"); return; }
+      const startAt = new Date(startRaw), endAt = new Date(endRaw);
+      if (isNaN(startAt) || isNaN(endAt)) { showToast("Date invalide.", "warn"); return; }
+      if (endAt <= startAt) { showToast("La fin doit être après le début.", "warn"); return; }
+      if (!getProjectById(els.sessionProjectInput.value)) { showToast("Projet invalide.", "warn"); return; }
+      app.state.sessions = app.state.sessions.map(s => s.id === app.editingSessionId ? { ...s, projectId: els.sessionProjectInput.value, startAt: startAt.toISOString(), endAt: endAt.toISOString(), note: els.sessionNoteInput.value.trim() } : s);
+      persist(); closeModal("sessionModal"); withScrollPreserved(render);
+      showToast("Session modifiée ✓");
+    }
+    function deleteSession(sessionId) {
+      const session = app.state.sessions.find(s => s.id === sessionId); if (!session) return;
+      app.state.sessions = app.state.sessions.filter(s => s.id !== sessionId);
+      persist(); withScrollPreserved(render);
+      showToast("Session supprimée.", "success", () => { app.state.sessions.push(session); app.state.sessions.sort((a,b) => new Date(a.startAt) - new Date(b.startAt)); persist(); withScrollPreserved(render); });
+    }
+    function exportData() { downloadJson("juuicyy-prod-time-tracker.json", app.state); showToast("Export terminé ✓"); }
+    function importData(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try { app.state = safeParseState(reader.result); app.sessionsPage = 1; persist(); withScrollPreserved(render); showToast("Import réussi ✓"); }
+        catch { showToast("Import impossible.", "error"); }
+      };
+      reader.onerror = () => showToast("Lecture impossible.", "error");
+      reader.readAsText(file);
+    }
+    function resetAllData() {
+      if (!confirm("Supprimer toutes les données locales ? Cette action est irréversible.")) return;
+      app.state = defaultState(true); app.sessionsPage = 1; persist(); window.scrollTo(0, 0); render(); showToast("Données réinitialisées.", "warn");
+    }
+    function copyWeeklySummary() {
+      const week = getCurrentWeek();
+      const lines = [`Résumé semaine — ${weekLabel()}`, ""];
+      week.days.forEach(day => {
+        const dk = dateKey(day); const entries = Object.entries(week.daily[dk]||{}).sort((a,b) => b[1]-a[1]); const total = entries.reduce((a,[,v]) => a+v, 0); if (!total) return;
+        lines.push(`${day.toLocaleDateString("fr-CA",{weekday:"long",day:"numeric",month:"short"})} — ${formatDurationShort(total)}`);
+        entries.forEach(([pid,dur]) => { const p = getProjectById(pid); lines.push(`  · ${p?.code||"Supprimé"}${p?.name?` (${p.name})`:""} : ${formatDurationShort(dur)}`); });
+        lines.push("");
+      });
+      lines.push(`Total : ${formatDurationShort(week.total)}`);
+      navigator.clipboard.writeText(lines.join("\n")).then(() => showToast("Résumé copié ✓")).catch(() => showToast("Impossible de copier.", "error"));
+    }
+
+    document.querySelectorAll("[data-tab]").forEach(btn => btn.addEventListener("click", () => { app.tab = btn.dataset.tab; withScrollPreserved(render); }));
+    els.projectSearch.addEventListener("input", e => { app.search = e.target.value; render(); });
+    els.timerNoteInput.addEventListener("input", e => {
+      els.timerNoteInput.dataset.userEditing = "1";
+      if (app.state.activeSession) {
+        app.state.activeSession.note = e.target.value;
+        clearTimeout(app._noteTimer);
+        app._noteTimer = setTimeout(persist, 600);
+      }
+    });
+    els.timerNoteInput.addEventListener("blur", () => { delete els.timerNoteInput.dataset.userEditing; });
+
+    $("newProjectDesktop")?.addEventListener("click", () => openProjectModal());
+    $("newProjectMobile")?.addEventListener("click", () => openProjectModal());
+    els.saveProjectBtn.addEventListener("click", saveProject);
+    els.saveSessionBtn.addEventListener("click", saveSession);
+    els.saveManualBtn.addEventListener("click", saveManualEntry);
+    $("copyWeekBtn")?.addEventListener("click", copyWeeklySummary);
+
+    document.querySelectorAll("[data-close]").forEach(btn => btn.addEventListener("click", () => closeModal(btn.dataset.close)));
+    document.querySelectorAll(".modal-backdrop").forEach(bd => bd.addEventListener("click", e => { if (e.target === bd) closeModal(bd.id); }));
+    els.projectCodeInput.addEventListener("keydown", e => { if (e.key === "Enter") saveProject(); });
+    els.projectNameInput.addEventListener("keydown", e => { if (e.key === "Enter") saveProject(); });
+    els.manualMinutesInput.addEventListener("keydown", e => { if (e.key === "Enter") saveManualEntry(); });
+    els.pauseBtn.addEventListener("click", pauseTimer);
+    els.stopBtn.addEventListener("click", stopTimer);
+    $("exportDesktop")?.addEventListener("click", exportData);
+    $("exportMobile")?.addEventListener("click", exportData);
+    $("resetDesktop")?.addEventListener("click", resetAllData);
+    $("resetMobile")?.addEventListener("click", resetAllData);
+    $("importDesktop")?.addEventListener("change", e => importData(e.target.files?.[0]));
+    $("importMobile")?.addEventListener("change", e => importData(e.target.files?.[0]));
+
+    document.addEventListener("click", e => {
+      const t = e.target.closest("[data-action]"); if (!t) return;
+      const { action, id } = t.dataset;
+      if (action === "edit-project") { const p = getProjectById(id); if (p) openProjectModal(p); }
+      if (action === "delete-project") deleteProject(id);
+      if (action === "start-project") {
+        startTimer(id);
+        if (!isDesktop()) { app.tab = "today"; withScrollPreserved(render); }
+      }
+      if (action === "quick-15") {
+        const p = getProjectById(id); if (!p) return;
+        app.manualProjectId = id; els.manualProjectLabel.textContent = p.name ? `${p.code} — ${p.name}` : p.code; els.manualMinutesInput.value = "15"; els.manualNoteInput.value = ""; saveManualEntry();
+      }
+      if (action === "quick-custom") openManualModal(id);
+      if (action === "edit-session") { const s = app.state.sessions.find(x => x.id===id); if (s) openSessionModal(s); }
+      if (action === "delete-session") deleteSession(id);
+    });
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") { document.querySelectorAll(".modal-backdrop.open").forEach(m => closeModal(m.id)); return; }
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.key === "p" || e.key === "P") { e.preventDefault(); pauseTimer(); }
+      if (e.key === "s" || e.key === "S") { e.preventDefault(); stopTimer(); }
+      if (e.key === "n" || e.key === "N") { e.preventDefault(); openProjectModal(); }
+    });
+
+    function loop() {
+      if (app.state.activeSession) tickUpdate();
+      const nextDateKey = dateKey(new Date());
+      const nextWeek = weekLabel();
+      if (nextDateKey !== app._lastRenderDateKey || nextWeek !== app._lastRenderWeekLabel) {
+        app._lastRenderDateKey = nextDateKey; app._lastRenderWeekLabel = nextWeek; withScrollPreserved(render);
+      }
+      app._loopTimer = window.setTimeout(loop, 1000);
+    }
+    window.addEventListener("resize", () => {
+      clearTimeout(app._resizeTimer);
+      app._resizeTimer = window.setTimeout(() => {
+        const modeChanged = isDesktop() !== app._lastViewportMode;
+        const widthChanged = Math.abs(window.innerWidth - app._lastViewportWidth) > 80;
+        app._lastViewportMode = isDesktop();
+        app._lastViewportWidth = window.innerWidth;
+        if (modeChanged || widthChanged) withScrollPreserved(render);
+      }, 120);
+    }, { passive: true });
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) withScrollPreserved(render); });
+
+    render();
+    loop();
   </script>
 </body>
 </html>

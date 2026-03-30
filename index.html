@@ -37,12 +37,20 @@
       --font-mono: 'JetBrains Mono', monospace;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { min-height: 100%; }
+    html, body { min-height: 100%; scroll-behavior: auto; overscroll-behavior-y: none; }
     body {
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: none;
       font-family: var(--font-ui);
       font-size: 15px;
       color: var(--text);
       background: var(--bg);
+    }
+    body.modal-open {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      overflow: hidden;
     }
     body::before {
       content: '';
@@ -55,7 +63,7 @@
     }
     .app-shell { position: relative; z-index: 1; min-height: 100vh; padding: 20px 16px 32px; }
     .app-wrap { max-width: var(--max-width); margin: 0 auto; }
-    button, input, select, textarea { font: inherit; }
+    button, input, select, textarea { font: inherit; touch-action: manipulation; }
     button { cursor: pointer; }
     input, select, textarea {
       width: 100%;
@@ -198,6 +206,7 @@
 
     /* ── PANEL ───────────────────────────────────────────── */
     .panel {
+      scroll-margin-top: 88px;
       margin-top: 14px; padding: 20px;
       background: var(--panel); border: 1px solid var(--line);
       border-radius: var(--radius-xl); box-shadow: var(--shadow);
@@ -391,6 +400,9 @@
     .modal-backdrop.open { display: grid; }
     .modal-panel {
       width: min(100%, 520px);
+      max-height: min(88vh, 760px);
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
       background: rgba(11,14,21,.98);
       border: 1px solid var(--line-strong);
       border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); padding: 22px;
@@ -453,6 +465,10 @@
     .hidden { display: none !important; }
 
     /* ── RESPONSIVE ──────────────────────────────────────── */
+    @media (max-width: 759px) {
+      .app-shell { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
+      .app-footer { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+    }
     @media (min-width: 760px) {
       .app-shell { padding: 28px 24px; }
       .hero-card { grid-template-columns: 1fr auto; align-items: end; }
@@ -842,7 +858,14 @@
       editingSessionId: null,
       manualProjectId: null,
       sessionsPage: 1,
-      _noteTimer: null
+      _noteTimer: null,
+      _lastViewportMode: window.innerWidth >= 980,
+      _lastViewportWidth: window.innerWidth,
+      _scrollLockY: 0,
+      _rafId: null,
+      _lastRenderDateKey: dateKey(new Date()),
+      _lastRenderWeekLabel: weekLabel(),
+      _resizeTimer: null
     };
 
     // ── ELEMENTS ────────────────────────────────────────────
@@ -932,6 +955,31 @@
     }
 
     function isDesktop() { return window.innerWidth >= 980; }
+
+    function lockBodyScroll() {
+      app._scrollLockY = window.scrollY || window.pageYOffset || 0;
+      document.body.classList.add("modal-open");
+      document.body.style.top = `-${app._scrollLockY}px`;
+    }
+
+    function unlockBodyScroll() {
+      if (!document.body.classList.contains("modal-open")) return;
+      document.body.classList.remove("modal-open");
+      document.body.style.top = "";
+      window.scrollTo(0, app._scrollLockY || 0);
+    }
+
+    function withScrollPreserved(fn) {
+      const activeEl = document.activeElement;
+      const shouldPreserve = !document.body.classList.contains("modal-open") &&
+        (!activeEl || !["INPUT", "TEXTAREA", "SELECT"].includes(activeEl.tagName));
+      const scrollX = window.scrollX || window.pageXOffset || 0;
+      const scrollY = window.scrollY || window.pageYOffset || 0;
+      fn();
+      if (shouldPreserve) {
+        requestAnimationFrame(() => window.scrollTo(scrollX, scrollY));
+      }
+    }
 
     // ── TICK UPDATE (every second, only timer values) ───────
     function tickUpdate() {
@@ -1121,7 +1169,7 @@
       if (allSessions.length > app.sessionsPage * SESSIONS_PER_PAGE) {
         const rem = allSessions.length - app.sessionsPage * SESSIONS_PER_PAGE;
         els.sessionsFooter.innerHTML = `<button class="btn btn-ghost" id="loadMoreBtn">Charger ${rem} de plus</button>`;
-        $("loadMoreBtn")?.addEventListener("click", () => { app.sessionsPage++; render(); });
+        $("loadMoreBtn")?.addEventListener("click", () => { app.sessionsPage++; withScrollPreserved(render); });
       } else {
         els.sessionsFooter.innerHTML = "";
       }
@@ -1139,8 +1187,14 @@
     }
 
     // ── MODALS ──────────────────────────────────────────────
-    function openModal(id) { $(id)?.classList.add("open"); }
-    function closeModal(id) { $(id)?.classList.remove("open"); }
+    function openModal(id) {
+      $(id)?.classList.add("open");
+      lockBodyScroll();
+    }
+    function closeModal(id) {
+      $(id)?.classList.remove("open");
+      if (!document.querySelector(".modal-backdrop.open")) unlockBodyScroll();
+    }
 
     function openProjectModal(project = null) {
       app.editingProjectId = project?.id || null;
@@ -1256,6 +1310,7 @@
     function saveManualEntry() {
       const p = getProjectById(app.manualProjectId);
       if (!p) { showToast("Projet introuvable.", "error"); return; }
+      if (p.archived) { showToast("Impossible d'ajouter du temps à un projet archivé.", "warn"); return; }
       const minutes = Number(els.manualMinutesInput.value);
       if (!isFinite(minutes) || minutes <= 0) { showToast("Entre un nombre de minutes valide.", "warn"); els.manualMinutesInput.focus(); return; }
       const safe = Math.round(minutes);
@@ -1289,6 +1344,7 @@
       const startAt = new Date(startRaw), endAt = new Date(endRaw);
       if (isNaN(startAt) || isNaN(endAt)) { showToast("Date invalide.", "warn"); return; }
       if (endAt <= startAt) { showToast("La fin doit être après le début.", "warn"); return; }
+      if (!getProjectById(els.sessionProjectInput.value)) { showToast("Projet invalide.", "warn"); return; }
       app.state.sessions = app.state.sessions.map(s =>
         s.id === app.editingSessionId
           ? { ...s, projectId: els.sessionProjectInput.value, startAt: startAt.toISOString(), endAt: endAt.toISOString(), note: els.sessionNoteInput.value.trim() }
@@ -1317,7 +1373,13 @@
       if (!file) return;
       const reader = new FileReader();
       reader.onload = () => {
-        try { app.state = safeParseState(reader.result); persist(); render(); showToast("Import réussi ✓"); }
+        try {
+          app.state = safeParseState(reader.result);
+          app.sessionsPage = 1;
+          persist();
+          withScrollPreserved(render);
+          showToast("Import réussi ✓");
+        }
         catch { showToast("Import impossible.", "error"); }
       };
       reader.onerror = () => showToast("Lecture impossible.", "error");
@@ -1326,7 +1388,7 @@
 
     function resetAllData() {
       if (!confirm("Supprimer toutes les données locales ? Cette action est irréversible.")) return;
-      app.state = defaultState(true); persist(); render();
+      app.state = defaultState(true); persist(); window.scrollTo(0, 0); render();
       showToast("Données réinitialisées.", "warn");
     }
 
@@ -1354,7 +1416,7 @@
 
     // ── EVENT LISTENERS ─────────────────────────────────────
     document.querySelectorAll("[data-tab]").forEach(btn => {
-      btn.addEventListener("click", () => { app.tab = btn.dataset.tab; render(); });
+      btn.addEventListener("click", () => { app.tab = btn.dataset.tab; withScrollPreserved(render); });
     });
 
     els.projectSearch.addEventListener("input", e => { app.search = e.target.value; render(); });
@@ -1382,7 +1444,7 @@
       btn.addEventListener("click", () => closeModal(btn.dataset.close));
     });
     document.querySelectorAll(".modal-backdrop").forEach(bd => {
-      bd.addEventListener("click", e => { if (e.target === bd) bd.classList.remove("open"); });
+      bd.addEventListener("click", e => { if (e.target === bd) closeModal(bd.id); });
     });
 
     // Submit on Enter in inputs
@@ -1408,7 +1470,7 @@
       if (action === "delete-project") deleteProject(id);
       if (action === "start-project") {
         startTimer(id);
-        if (!isDesktop()) { app.tab = "today"; render(); }
+        if (!isDesktop()) { app.tab = "today"; withScrollPreserved(render); }
       }
       if (action === "quick-15") {
         const p = getProjectById(id);
@@ -1426,7 +1488,10 @@
 
     // Keyboard shortcuts
     document.addEventListener("keydown", e => {
-      if (e.key === "Escape") { document.querySelectorAll(".modal-backdrop.open").forEach(m => m.classList.remove("open")); return; }
+      if (e.key === "Escape") {
+        document.querySelectorAll(".modal-backdrop.open").forEach(m => closeModal(m.id));
+        return;
+      }
       const tag = document.activeElement?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       if (e.key === "p" || e.key === "P") { e.preventDefault(); pauseTimer(); }
@@ -1435,11 +1500,35 @@
     });
 
     // ── LOOPS ────────────────────────────────────────────────
-    setInterval(() => { if (app.state.activeSession) tickUpdate(); }, 1000);
-    setInterval(render, 30000); // Full re-render every 30s to keep week totals fresh
-    window.addEventListener("resize", render);
+    function loop() {
+      if (app.state.activeSession) tickUpdate();
+      const nextDateKey = dateKey(new Date());
+      const nextWeekLabel = weekLabel();
+      if (nextDateKey !== app._lastRenderDateKey || nextWeekLabel !== app._lastRenderWeekLabel) {
+        app._lastRenderDateKey = nextDateKey;
+        app._lastRenderWeekLabel = nextWeekLabel;
+        withScrollPreserved(render);
+      }
+      app._rafId = window.setTimeout(loop, 1000);
+    }
+
+    window.addEventListener("resize", () => {
+      clearTimeout(app._resizeTimer);
+      app._resizeTimer = window.setTimeout(() => {
+        const modeChanged = isDesktop() !== app._lastViewportMode;
+        const widthChanged = Math.abs(window.innerWidth - app._lastViewportWidth) > 80;
+        app._lastViewportMode = isDesktop();
+        app._lastViewportWidth = window.innerWidth;
+        if (modeChanged || widthChanged) withScrollPreserved(render);
+      }, 120);
+    }, { passive: true });
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) withScrollPreserved(render);
+    });
 
     render();
+    loop();
   </script>
 </body>
 </html>
